@@ -1,29 +1,33 @@
 #include "StarterBot.h"
 #include "Tools.h"
 #include "MapTools.h"
+#include "../visualstudio/Profiler.hpp"
 
 /**
 * Nishant Rathore 
 * Rohan Parmar
 */
 
-StarterBot::StarterBot()
+StarterBot::StarterBot(ResourceManager& rm)
 {
-    
+    m_resourceManager = rm;
 }
 
 // Called when the bot starts!
 void StarterBot::onStart()
 {
+    count = 7;
     // Set our BWAPI options here    
 	BWAPI::Broodwar->setLocalSpeed(10);
     BWAPI::Broodwar->setFrameSkip(0);
     
     // Enable the flag that tells BWAPI top let users enter input while bot plays
     BWAPI::Broodwar->enableFlag(BWAPI::Flag::UserInput);
+    //BWAPI::Broodwar->enableFlag(BWAPI::Flag::CompleteMapInformation);
 
     // Call MapTools OnStart
     m_mapTools.onStart();
+
 }
 
 // Called whenever the game ends and tells you if you won or not
@@ -32,9 +36,13 @@ void StarterBot::onEnd(bool isWinner)
     std::cout << "We " << (isWinner ? "won!" : "lost!") << "\n";
 }
 
+int gatewayCount = 100;
+
 // Called on each frame of the game
 void StarterBot::onFrame()
 {
+    PROFILE_FUNCTION();
+
     // Update our MapTools information
     m_mapTools.onFrame();
 
@@ -44,8 +52,10 @@ void StarterBot::onFrame()
     // Train more workers so we can gather more income
     trainAdditionalWorkers();
 
+    //createArmyBuildings();
+
     // Build more supply if we are going to run out soon
-    //buildAdditionalSupply();
+    buildAdditionalSupply();
 
     // Draw unit health bars, which brood war unfortunately does not do
     Tools::DrawUnitHealthBars();
@@ -54,119 +64,270 @@ void StarterBot::onFrame()
     drawDebugInformation();
 }
 
-//BFS Node
-struct BFSNode
-{
-    int x;
-    int y;
-    int position;
-    BFSNode* parent;
+////BFS Node
+//struct BFSNode
+//{
+//    int x;
+//    int y;
+//    int position;
+//    BFSNode* parent;
+//
+//    BFSNode(int x, int y, int position, BFSNode* parent)
+//    {
+//        this->x = x;
+//        this->y = y;
+//        this->position = position;
+//        this->parent = parent;
+//    }
+//};
+//
+////Direction struct for BFS
+//struct Direction
+//{
+//    int x = 0;
+//    int y = 0;
+//};
+//
+//struct Direction directions[4] = { {1,0},{0,-1},{-1,0},{0,1} }; // legal Directions for BFS 
+//
+//std::vector<BFSNode> openList; // BFS open list
+//std::map<std::string,bool> closedList; // BFS closed map
+//
+//std::map<std::string, bool>::iterator it; // iterator to loop over closed list
+//std::vector<BFSNode> path; // final path 
+//
+//
+//
+//// Order a move command to the workers to gather near the nexus
+//void moveTrainedWorkers()
+//{
+//
+//    BWAPI::TilePosition& pos = BWAPI::Broodwar->self()->getStartLocation();
+//
+//    openList.push_back(BFSNode(pos.x,pos.y,0,nullptr));
+//
+//    size_t size = openList.size();
+//
+//    for (size_t i=0; i<size; i++)
+//    {
+//        BFSNode node = openList[i];
+//
+//        it = closedList.find(std::to_string(node.x) + std::to_string(node.y));
+//        if(it == closedList.end()) closedList.emplace(std::to_string(node.x)+ std::to_string(node.y),true);
+//
+//        for (size_t d = 0; d < 4; d++)
+//        {
+//            it = closedList.find(std::to_string(node.x + directions[d].x) + std::to_string(node.y + directions[d].y));
+//            int x = node.x + directions[d].x;
+//            int y = node.y + directions[d].y;
+//
+//            if (it == closedList.end())
+//            {
+//                BFSNode childNode = BFSNode(x, y, node.position++, &node);
+//                bool arePositionsFound = true;
+//                path.push_back(childNode);
+//                for (size_t c = 0; c < 7; c++)
+//                {         
+//                    x = x + directions[d].x;
+//                    y = y + directions[d].y;
+//
+//                    if (BWAPI::Broodwar->getUnitsOnTile(x,y).size())
+//                    {
+//                        arePositionsFound = false;
+//                        break;
+//                    }
+//                    path.push_back(BFSNode(x, y, c+1, &childNode));
+//                }
+//
+//                // if the desired path is found, stop BFS and return
+//                if (arePositionsFound && path.size() == 8)
+//                {
+//                    return;
+//                }
+//                // cleat vector for the next iteration
+//                path.clear();
+//                // add to open list
+//                openList.push_back(childNode);
+//                size++;
+//            }
+//        } 
+//
+//    }
+//
+//}
 
-    BFSNode(int x, int y, int position, BFSNode* parent)
+std::mutex m;
+
+void ResourceManager::calculateDistances()
+{
+    std::lock_guard<std::mutex> guard(m);
+
+    int height = BWAPI::Broodwar->mapHeight();
+    int width = BWAPI::Broodwar->mapWidth();
+
+    for (int i=0;i<height;i++) 
     {
-        this->x = x;
-        this->y = y;
-        this->position = position;
-        this->parent = parent;
-    }
-};
-
-//Direction struct for BFS
-struct Direction
-{
-    int x = 0;
-    int y = 0;
-};
-
-struct Direction directions[4] = { {1,0},{0,-1},{-1,0},{0,1} }; // legal Directions for BFS 
-
-std::vector<BFSNode> openList; // BFS open list
-std::map<std::string,bool> closedList; // BFS closed map
-
-std::map<std::string, bool>::iterator it; // iterator to loop over closed list
-std::vector<BFSNode> path; // final path 
-
-int count = 7;
-
-
-// Order a move command to the workers to gather near the nexus
-void moveTrainedWorkers()
-{
-    BWAPI::TilePosition& pos = BWAPI::Broodwar->self()->getStartLocation();
-
-    openList.push_back(BFSNode(pos.x,pos.y,0,nullptr));
-
-    size_t size = openList.size();
-
-    for (size_t i=0; i<size; i++)
-    {
-        BFSNode node = openList[i];
-
-        it = closedList.find(std::to_string(node.x) + std::to_string(node.y));
-        if(it == closedList.end()) closedList.emplace(std::to_string(node.x)+ std::to_string(node.y),true);
-
-        for (size_t d = 0; d < 4; d++)
+        for (int j = 0; j<width; j++)
         {
-            it = closedList.find(std::to_string(node.x + directions[d].x) + std::to_string(node.y + directions[d].y));
-            int x = node.x + directions[d].x;
-            int y = node.y + directions[d].y;
-
-            if (it == closedList.end())
-            {
-                BFSNode childNode = BFSNode(x, y, node.position++, &node);
-                bool arePositionsFound = true;
-                path.push_back(childNode);
-                for (size_t c = 0; c < 7; c++)
-                {         
-                    x = x + directions[d].x;
-                    y = y + directions[d].y;
-
-                    if (BWAPI::Broodwar->getUnitsOnTile(x,y).size())
-                    {
-                        arePositionsFound = false;
-                        break;
-                    }
-                    path.push_back(BFSNode(x, y, c+1, &childNode));
-                }
-
-                // if the desired path is found, stop BFS and return
-                if (arePositionsFound && path.size() == 8)
-                {
-                    return;
-                }
-                // cleat vector for the next iteration
-                path.clear();
-                // add to open list
-                openList.push_back(childNode);
-                size++;
-            }
+            BWAPI::Position pos(BWAPI::TilePosition(j, i));
+            BWAPI::Unit closestMineral = Tools::GetClosestUnitTo(pos, BWAPI::Broodwar->getMinerals());
+            BWAPI::Unit closestGeyesers = Tools::GetClosestUnitTo(pos, BWAPI::Broodwar->getGeysers());
+            setMineralResource(j, i, closestMineral);
+            setRefineryResource(j, i, closestGeyesers);
         }
-
     }
-
 }
 
-bool isIdleStateAllowed = false;
+bool isRefBuilt = false;
+bool isGatewayBuilt = false;
+bool isForgeBuilt = false;
+bool isCannonBuilt = false;
 
 // Send our idle workers to mine minerals so they don't just stand there
 void StarterBot::sendIdleWorkersToMinerals()
 {
-    // if 8 probes are created and moved, then do not sent them back to mining
-    if (isIdleStateAllowed) return;
+
+    PROFILE_FUNCTION();
+
+    if (count > 5)
+    {
+       // m_resourceManager.calculateDistances();
+
+        if(t1.joinable()) t1.join();
+
+        t1 = std::thread(&ResourceManager::calculateDistances, std::ref(m_resourceManager));
+
+        //for(const BWAPI::Unit& u : BWAPI::Broodwar->getGeysers()) std::cout << u->getTilePosition() << std::endl << " Done "<<std::endl;
+        //for (const BWAPI::Unit& u : BWAPI::Broodwar->getMinerals()) std::cout << u->getTilePosition() << std::endl;
+
+        //BWAPI::UnitType ut = BWAPI::UnitTypes::Protoss_Gateway;
+
+        //for (auto u : ut.requiredUnits())        {
+        //    std::cout << u.first << "   " << u.second << std::endl;
+        //}
+
+        count--;
+    }
+    else 
+    {
+        if (t1.joinable())
+        {
+            t1.detach();
+        }
+    }
+   
 
     // Let's send all of our starting workers to the closest mineral to them
     // First we need to loop over all of the units that we (BWAPI::Broodwar->self()) own
     const BWAPI::Unitset& myUnits = BWAPI::Broodwar->self()->getUnits();
+    BWAPI::TilePosition refineryPosition(0,0);
+
+
+
     for (auto& unit : myUnits)
     {
+
+        // Get the closest mineral to this worker unit
+
+        auto u = m_resourceManager.getMineralResource(unit->getTilePosition().x, unit->getTilePosition().y);
+
+        //std::string s = std::to_string(unit->getTilePosition().x) + " " + std::to_string(unit->getTilePosition().y);
+
+        //std::string st = std::to_string(u->getTilePosition().x) + " " + std::to_string(u->getTilePosition().y);
+
+        if (!u) continue;
+        if (u->getID() == -1) continue;
+
+        BWAPI::Position pos(BWAPI::TilePosition(unit->getTilePosition().x, unit->getTilePosition().y));
+        BWAPI::Unit closestMineral = u;
+
+       // int closMinID = closestMineral->getID();
+
+        //std::string t = std::to_string(closestMineral->getTilePosition().x) + " " + std::to_string(closestMineral->getTilePosition().y);
+
+        BWAPI::Unit closestGeyser = m_resourceManager.getRefineryResource(unit->getTilePosition().x, unit->getTilePosition().y);
+
         // Check the unit type, if it is an idle worker, then we want to send it somewhere
         if (unit->getType().isWorker() && unit->isIdle())
         {
-            // Get the closest mineral to this worker unit
-            BWAPI::Unit closestMineral = Tools::GetClosestUnitTo(unit, BWAPI::Broodwar->getMinerals());
 
-            // If a valid mineral was found, right click it with the unit in order to start harvesting
+            int mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
+            //
+            int mineralPrice = BWAPI::Broodwar->self()->getRace().getRefinery().mineralPrice();
+
+            if (mineralsLeft - mineralPrice > 0 && !isRefBuilt)
+            {
+
+                isRefBuilt = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Assimilator);
+            }
+
+            mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
+            //
+            mineralPrice = BWAPI::Broodwar->self()->getRace().getRefinery().mineralPrice();
+
+            if (mineralsLeft - mineralPrice > 0 && !isGatewayBuilt)
+            {
+
+                isGatewayBuilt = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Gateway);
+
+                isGatewayBuilt = true;
+            }
+
+            mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
+            //
+            mineralPrice = BWAPI::UnitTypes::Protoss_Forge;
+
+
+            if (mineralsLeft - mineralPrice > 0 && !isForgeBuilt)
+            {
+                isForgeBuilt = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Forge);
+                isForgeBuilt = true;
+            }
+
+
+            mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
+            //
+            mineralPrice = BWAPI::UnitTypes::Protoss_Photon_Cannon;
+
+
+            if (mineralsLeft - mineralPrice > 0)
+            {
+                Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Photon_Cannon);
+            }
+
+            //    if (true)//unit->build(BWAPI::Broodwar->self()->getRace().getRefinery(), closestGeyser->getTilePosition()))
+            //    {
+
+            //    }
+            //    else
+            //    {
+            //        if (refineryPosition.x > 0 && refineryPosition.y > 0)
+            //        {
+            //            for (const BWAPI::Unit& u : BWAPI::Broodwar->getUnitsOnTile(refineryPosition))
+            //            {
+            //                if (!unit->rightClick(u))
+            //                {
+
+            //                    if (closestMineral) { unit->rightClick(closestMineral); }
+            //                }
+            //            }
+            //        }
+            //        else
+            //        {
+            //            if (closestMineral) { unit->rightClick(closestMineral); }
+            //        }
+            //    }
+
+            //}
+            //else
+            //{
+            //    if (closestMineral) { unit->rightClick(closestMineral); }
+            //}
             if (closestMineral) { unit->rightClick(closestMineral); }
+        }
+        else if (unit->getType() == BWAPI::UnitTypes::Protoss_Assimilator && unit->isCompleted())
+        {
+            refineryPosition = unit->getTilePosition();
         }
     }
 }
@@ -174,10 +335,9 @@ void StarterBot::sendIdleWorkersToMinerals()
 // Train more workers so we can gather more income
 void StarterBot::trainAdditionalWorkers()
 {
-    //if (count <= 0) return;
 
     const BWAPI::UnitType workerType = BWAPI::Broodwar->self()->getRace().getWorker();
-    const int workersWanted = 8;
+    const int workersWanted = 50;
     const int workersOwned = Tools::CountUnitsOfType(workerType, BWAPI::Broodwar->self()->getUnits());
     // get the unit pointer to my depot
     const BWAPI::Unit myDepot = Tools::GetDepot();
@@ -193,25 +353,24 @@ void StarterBot::trainAdditionalWorkers()
         myDepot->cancelTrain();
 
         // sets the flag so that workers are not sent back mining
-        isIdleStateAllowed = true;
         // once enough units are created, order a move commands
-        moveTrainedWorkers();
+        //moveTrainedWorkers();
 
-        for (auto& unit: BWAPI::Broodwar->self()->getUnits())
-        {
-            // check if it is the right unit that needs moved
-            if (unit->isGatheringMinerals() && unit->isCompleted() && unit->getType() == workerType)
-            {
-                if(count >= 0)
-                {
-                    BWAPI::Position pos = BWAPI::Position(BWAPI::TilePosition(path[count].x, path[count].y));
-                    auto command = unit->getLastCommand();
-                    // if the last command is not the same as this position, move this unit
-                    if (command.getTargetPosition() != pos)  unit->move(pos);
-                    count--;
-                }
-            }
-        }
+        //for (auto& unit: BWAPI::Broodwar->self()->getUnits())
+        //{
+        //    // check if it is the right unit that needs moved
+        //    if (unit->isGatheringMinerals() && unit->isCompleted() && unit->getType() == workerType)
+        //    {
+        //        if(count >= 0)
+        //        {
+        //            BWAPI::Position pos = BWAPI::Position(BWAPI::TilePosition(path[count].x, path[count].y));
+        //            auto command = unit->getLastCommand();
+        //            // if the last command is not the same as this position, move this unit
+        //            if (command.getTargetPosition() != pos)  unit->move(pos);
+        //            count--;
+        //        }
+        //    }
+        //}
 
     }
 }
@@ -219,20 +378,63 @@ void StarterBot::trainAdditionalWorkers()
 // Build more supply if we are going to run out soon
 void StarterBot::buildAdditionalSupply()
 {
+
+    PROFILE_FUNCTION();
+
     // Get the amount of supply supply we currently have unused
     const int unusedSupply = Tools::GetTotalSupply(true) - BWAPI::Broodwar->self()->supplyUsed();
 
     // If we have a sufficient amount of supply, we don't need to do anything
-    if (unusedSupply >= 2) { return; }
+    if (unusedSupply >= 2) 
+    {
+        return; 
+    }
 
     // Otherwise, we are going to build a supply provider
     const BWAPI::UnitType supplyProviderType = BWAPI::Broodwar->self()->getRace().getSupplyProvider();
 
-    const bool startedBuilding = Tools::BuildBuilding(supplyProviderType);
+    bool startedBuilding = Tools::BuildBuilding(supplyProviderType);
     if (startedBuilding)
     {
         BWAPI::Broodwar->printf("Started Building %s", supplyProviderType.getName().c_str());
     }
+
+
+    //int mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
+
+    //int mineralPrice = BWAPI::UnitTypes::Protoss_Forge.mineralPrice();
+
+    //if (mineralsLeft - mineralPrice > 0)
+    //{
+    //    startedBuilding = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Forge);
+
+    //}
+
+    //if (startedBuilding)
+    //{
+    //    BWAPI::Broodwar->printf("Started Building %s", BWAPI::UnitTypes::Protoss_Forge.getName().c_str());
+    //}
+
+    //mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
+
+    //mineralPrice = BWAPI::UnitTypes::Protoss_Photon_Cannon.mineralPrice();
+
+    //if (mineralsLeft - mineralPrice)
+    //{
+    //    startedBuilding = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Photon_Cannon);
+    //}
+
+    //if (startedBuilding)
+    //{
+    //    BWAPI::Broodwar->printf("Started Building %s", BWAPI::UnitTypes::Protoss_Photon_Cannon.getName().c_str());
+    //}
+
+    //mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
+
+    //mineralPrice = BWAPI::UnitTypes::Protoss_Photon_Cannon.mineralPrice();
+
+    //startedBuilding = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Photon_Cannon);
+
 }
 
 
@@ -287,6 +489,14 @@ void StarterBot::onUnitShow(BWAPI::Unit unit)
 	
 }
 
+void StarterBot::onUnitDiscover(BWAPI::Unit unit)
+{
+
+    //if (t1.joinable()) t1.join();
+
+    //t1 = std::thread(&ResourceManager::calculateDistances, std::ref(m_resourceManager));
+}
+
 // Called whenever a unit gets hidden, with a pointer to the destroyed unit
 // This is usually triggered when units enter the fog of war and are no longer visible
 void StarterBot::onUnitHide(BWAPI::Unit unit)
@@ -299,4 +509,32 @@ void StarterBot::onUnitHide(BWAPI::Unit unit)
 void StarterBot::onUnitRenegade(BWAPI::Unit unit)
 { 
 	
+}
+
+ResourceManager::ResourceManager()
+{
+    int m_width = BWAPI::Broodwar->mapWidth();
+    int m_height = BWAPI::Broodwar->mapHeight();
+    m_mineralResource = Grid<BWAPI::Unit>(m_width, m_height, BWAPI::Unit());
+    m_refineryResource = Grid<BWAPI::Unit>(m_width, m_height, BWAPI::Unit());
+}
+
+BWAPI::Unit ResourceManager::getMineralResource(int x, int y)
+{
+    return m_mineralResource.get(x, y);
+}
+
+void ResourceManager::setMineralResource(int x, int y, BWAPI::Unit unit)
+{
+    m_mineralResource.set(x, y, unit);
+}
+
+BWAPI::Unit ResourceManager::getRefineryResource(int x, int y)
+{
+    return m_refineryResource.get(x, y);
+}
+
+void ResourceManager::setRefineryResource(int x, int y, BWAPI::Unit unit)
+{
+    m_refineryResource.set(x, y, unit);
 }

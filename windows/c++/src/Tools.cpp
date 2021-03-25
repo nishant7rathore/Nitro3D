@@ -1,4 +1,5 @@
 #include "Tools.h"
+#include "../visualstudio/BuildingStrategyManager.h"
 
 BWAPI::Unit Tools::GetClosestUnitTo(BWAPI::Position p, const BWAPI::Unitset& units)
 {
@@ -74,8 +75,20 @@ bool Tools::BuildBuilding(BWAPI::UnitType type)
     // Ask BWAPI for a building location near the desired position for the type
     int maxBuildRange = 64;
     bool buildingOnCreep = type.requiresCreep();
+
+    BuildingStrategyManager bsm = BuildingStrategyManager();
     BWAPI::TilePosition buildPos = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
-    return builder->build(type, buildPos);
+    bool hasBuilt = builder->build(type, buildPos);
+
+
+    //buildPos = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
+    //builder->build(type, buildPos);
+
+    //buildPos = BWAPI::Broodwar->getBuildLocation(BWAPI::UnitTypes::Protoss_Forge, desiredPos, maxBuildRange, buildingOnCreep);
+
+    //bool hasBuilt = builder->build(BWAPI::UnitTypes::Protoss_Forge, desiredPos);
+
+    return hasBuilt;
 }
 
 void Tools::DrawUnitCommands()
