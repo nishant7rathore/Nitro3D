@@ -257,15 +257,15 @@ void StarterBot::sendIdleWorkersToMinerals()
             //
             int mineralPrice = BWAPI::Broodwar->self()->getRace().getRefinery().mineralPrice();
 
-            if (mineralsLeft - mineralPrice > 0 && !isRefBuilt)
+            if (mineralsLeft - mineralPrice > 0 && !m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Assimilator])
             {
 
-                isRefBuilt = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Assimilator);
-                std::cout << "Refinery Built" << std::endl;
-                if (isRefBuilt) m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Assimilator] = 1;
+                Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Assimilator);
+                //std::cout << "Refinery Built" << std::endl;
+                //if (isRefBuilt) m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Assimilator] = 1;
             }
 
-            else if (isRefBuilt)
+            else if (m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Assimilator])
             {
                 u = m_resourceManager.getRefineryResource(unit->getTilePosition().x, unit->getTilePosition().y);
                 if (u && u->getID() != -1) { unit->rightClick(u); }

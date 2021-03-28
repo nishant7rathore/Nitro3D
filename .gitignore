@@ -11,6 +11,7 @@ windows/starcraft/*.dll
 windows/starcraft/*.ini
 windows/starcraft/*.MPQ
 windows/starcraft/*.mpq
+windows/bin/*.json
 *.sdf
 *.suo
 *.opensdf
@@ -34,4 +35,3 @@ windows/starcraft/Errors/2021 Mar 23.txt
 *.ERR
 windows/starcraft/bwapi-data/bwapi.ini
 windows/c++/visualstudio/results.json
-windows/starcraft/bwapi-data/bwapi.ini
