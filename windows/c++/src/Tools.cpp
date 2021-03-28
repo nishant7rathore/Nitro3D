@@ -1,5 +1,5 @@
 #include "Tools.h"
-#include "../visualstudio/BuildingStrategyManager.h"
+#include "BuildingStrategyManager.h"
 
 BWAPI::Unit Tools::GetClosestUnitTo(BWAPI::Position p, const BWAPI::Unitset& units)
 {
@@ -23,6 +23,20 @@ BWAPI::Unit Tools::GetClosestUnitTo(BWAPI::Unit unit, const BWAPI::Unitset& unit
 }
 
 int Tools::CountUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units)
+{
+    int sum = 0;
+    for (auto& unit : units)
+    {
+        if (unit->getType() == type)
+        {
+            sum++;
+        }
+    }
+
+    return sum;
+}
+
+int Tools::CountBuildingUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units)
 {
     int sum = 0;
     for (auto& unit : units)

@@ -11,6 +11,8 @@
 StarterBot::StarterBot(ResourceManager& rm)
 {
     m_resourceManager = rm;
+    m_strategyManager = StrategyManager();
+
 }
 
 // Called when the bot starts!
@@ -259,41 +261,51 @@ void StarterBot::sendIdleWorkersToMinerals()
             {
 
                 isRefBuilt = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Assimilator);
+                std::cout << "Refinery Built" << std::endl;
+                if (isRefBuilt) m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Assimilator] = 1;
             }
 
-            mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
-            //
-            mineralPrice = BWAPI::Broodwar->self()->getRace().getRefinery().mineralPrice();
-
-            if (mineralsLeft - mineralPrice > 0 && !isGatewayBuilt)
+            else if (isRefBuilt)
             {
-
-                isGatewayBuilt = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Gateway);
-
-                isGatewayBuilt = true;
+                u = m_resourceManager.getRefineryResource(unit->getTilePosition().x, unit->getTilePosition().y);
+                if (u && u->getID() != -1) { unit->rightClick(u); }
             }
 
-            mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
-            //
-            mineralPrice = BWAPI::UnitTypes::Protoss_Forge;
+            else if (closestMineral) { unit->rightClick(closestMineral); }
+            
+            //mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
+            ////
+            //mineralPrice = BWAPI::Broodwar->self()->getRace().getRefinery().mineralPrice();
+
+            //if (mineralsLeft - mineralPrice > 0 && !isGatewayBuilt)
+            //{
+
+            //    isGatewayBuilt = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Gateway);
+
+            //    isGatewayBuilt = true;
+            //}
+
+            //mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
+            ////
+            //mineralPrice = BWAPI::UnitTypes::Protoss_Forge;
 
 
-            if (mineralsLeft - mineralPrice > 0 && !isForgeBuilt)
-            {
-                isForgeBuilt = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Forge);
-                isForgeBuilt = true;
-            }
+            //if (mineralsLeft - mineralPrice > 0 && !isForgeBuilt)
+            //{
+            //    isForgeBuilt = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Forge);
+            //    isForgeBuilt = true;
+            //}
 
 
-            mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
-            //
-            mineralPrice = BWAPI::UnitTypes::Protoss_Photon_Cannon;
+            //mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
+            ////
+            //mineralPrice = BWAPI::UnitTypes::Protoss_Photon_Cannon;
 
 
-            if (mineralsLeft - mineralPrice > 0)
-            {
-                Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Photon_Cannon);
-            }
+            //if (mineralsLeft - mineralPrice > 0)
+            //{
+            //    Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Photon_Cannon);
+            //}
 
             //    if (true)//unit->build(BWAPI::Broodwar->self()->getRace().getRefinery(), closestGeyser->getTilePosition()))
             //    {
@@ -323,11 +335,7 @@ void StarterBot::sendIdleWorkersToMinerals()
             //{
             //    if (closestMineral) { unit->rightClick(closestMineral); }
             //}
-            if (closestMineral) { unit->rightClick(closestMineral); }
-        }
-        else if (unit->getType() == BWAPI::UnitTypes::Protoss_Assimilator && unit->isCompleted())
-        {
-            refineryPosition = unit->getTilePosition();
+          
         }
     }
 }
@@ -337,7 +345,7 @@ void StarterBot::trainAdditionalWorkers()
 {
 
     const BWAPI::UnitType workerType = BWAPI::Broodwar->self()->getRace().getWorker();
-    const int workersWanted = 50;
+    const int workersWanted = 10;
     const int workersOwned = Tools::CountUnitsOfType(workerType, BWAPI::Broodwar->self()->getUnits());
     // get the unit pointer to my depot
     const BWAPI::Unit myDepot = Tools::GetDepot();
@@ -349,8 +357,88 @@ void StarterBot::trainAdditionalWorkers()
     }
     else
     {
-        // stop training if we are at the desired number
-        myDepot->cancelTrain();
+
+        int& numUnits = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Gateway);
+        int& numForgeUnits = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Forge);
+
+        int& numDragoonUnits = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Cybernetics_Core);
+
+        int& numCannonUnits = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Photon_Cannon);
+
+
+        int mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
+
+        int mineralPrice = BWAPI::UnitTypes::Protoss_Gateway.mineralPrice();
+
+        if (numUnits < 2 && (mineralsLeft - mineralPrice))
+        {
+            bool built = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Gateway);
+
+            if (built)
+            {
+                //numUnits = Tools::CountBuildingUnitsOfType(BWAPI::UnitTypes::Protoss_Gateway, BWAPI::Broodwar->self()->getUnits());
+                //std::cout << "Gateway Built " << numUnits << std::endl;
+                BWAPI::Broodwar->printf("Started Building %s", BWAPI::UnitTypes::Protoss_Gateway.getName().c_str());
+                //m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Gateway]= numUnits;
+            }
+        }
+        
+        mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
+
+        mineralPrice = BWAPI::UnitTypes::Protoss_Forge.mineralPrice();
+
+        if (numForgeUnits < 1 && (mineralsLeft - mineralPrice))
+        {
+            bool built = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Forge);
+
+            if (built)
+            {
+                //numForgeUnits++;
+                //numForgeUnits = Tools::CountBuildingUnitsOfType(BWAPI::UnitTypes::Protoss_Forge, BWAPI::Broodwar->self()->getUnits());
+                BWAPI::Broodwar->printf("Started Building %s", BWAPI::UnitTypes::Protoss_Forge.getName().c_str());
+                //m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Forge] = numForgeUnits;
+                //int t = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Forge);
+            }
+        }
+
+        mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
+
+        mineralPrice = BWAPI::UnitTypes::Protoss_Cybernetics_Core.mineralPrice();
+
+        if (numDragoonUnits < 1 && (mineralsLeft - mineralPrice))
+        {
+            bool built = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Cybernetics_Core);
+
+            if (built)
+            {
+                //numDragoonUnits++;
+                //numDragoonUnits = Tools::CountBuildingUnitsOfType(BWAPI::UnitTypes::Protoss_Cybernetics_Core, BWAPI::Broodwar->self()->getUnits());
+                //std::cout << "Cybernetics_Core Built:  " << numDragoonUnits << std::endl;
+                BWAPI::Broodwar->printf("Started Building %s", BWAPI::UnitTypes::Protoss_Cybernetics_Core.getName().c_str());
+                //m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Cybernetics_Core] = numDragoonUnits;
+                //int t = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Cybernetics_Core);
+            }
+        }
+
+
+
+        mineralsLeft = BWAPI::Broodwar->self()->gatheredMinerals() - BWAPI::Broodwar->self()->spentMinerals();
+
+        mineralPrice = BWAPI::UnitTypes::Protoss_Photon_Cannon.mineralPrice();
+
+        if (numCannonUnits < 8 && (mineralsLeft - mineralPrice))
+        {
+            bool built = Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Photon_Cannon);
+
+            if (built)
+            {
+                //numCannonUnits++;
+                //numCannonUnits = Tools::CountBuildingUnitsOfType(BWAPI::UnitTypes::Protoss_Photon_Cannon, BWAPI::Broodwar->self()->getUnits());
+                //BWAPI::Broodwar->printf("Started Building %s", BWAPI::UnitTypes::Protoss_Photon_Cannon.getName().c_str());
+                //m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Photon_Cannon] = numCannonUnits;
+                //int t = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Photon_Cannon);
+            }
+        }
 
         // sets the flag so that workers are not sent back mining
         // once enough units are created, order a move commands
@@ -387,7 +475,7 @@ void StarterBot::buildAdditionalSupply()
     // If we have a sufficient amount of supply, we don't need to do anything
     if (unusedSupply >= 2) 
     {
-        return; 
+        return;
     }
 
     // Otherwise, we are going to build a supply provider
@@ -449,19 +537,19 @@ void StarterBot::drawDebugInformation()
 // Called whenever a unit is destroyed, with a pointer to the unit
 void StarterBot::onUnitDestroy(BWAPI::Unit unit)
 {
-	
+
 }
 
 // Called whenever a unit is morphed, with a pointer to the unit
 // Zerg units morph when they turn into other units
 void StarterBot::onUnitMorph(BWAPI::Unit unit)
 {
-	
+
 }
 
 // Called whenever a text is sent to the game by a user
-void StarterBot::onSendText(std::string text) 
-{ 
+void StarterBot::onSendText(std::string text)
+{
     if (text == "map")
     {
         m_mapTools.toggleDraw();
@@ -472,25 +560,62 @@ void StarterBot::onSendText(std::string text)
 // Units are created in buildings like barracks before they are visible, 
 // so this will trigger when you issue the build command for most units
 void StarterBot::onUnitCreate(BWAPI::Unit unit)
-{ 
-	
+{
+    if (m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Assimilator] && unit->getType().isWorker())
+    {
+        unit->rightClick(Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Assimilator));
+    }
+    
+    if (unit->getType().isBuilding())
+    {
+        int& numUnits = m_strategyManager.getNumberOfUnits(unit->getType());
+        numUnits = Tools::CountBuildingUnitsOfType(unit->getType(), BWAPI::Broodwar->self()->getUnits());
+    }
+
 }
 
 // Called whenever a unit finished construction, with a pointer to the unit
 void StarterBot::onUnitComplete(BWAPI::Unit unit)
 {
-	
+    if (unit->getType().isBuilding())
+    {
+        if (unit->getType().buildsWhat().count(BWAPI::UnitTypes::Protoss_Zealot))
+        {
+            int& numUnits = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Zealot);
+            int& numDragoonUnits = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Dragoon);
+            if (numUnits < m_strategyManager.getUnitStrategyManager().getNumberOfUnits(BWAPI::UnitTypes::Protoss_Zealot))
+            {
+                //numUnits++;
+                if (unit->train(BWAPI::UnitTypes::Protoss_Zealot)) m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Zealot] = numUnits;
+                numUnits = Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Zealot,BWAPI::Broodwar->self()->getUnits());
+            }
+            if (numDragoonUnits < m_strategyManager.getUnitStrategyManager().getNumberOfUnits(BWAPI::UnitTypes::Protoss_Dragoon))
+            {
+                //numDragoonUnits++;
+                if (unit->train(BWAPI::UnitTypes::Protoss_Dragoon)) m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Dragoon] = numDragoonUnits;
+                numUnits = Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Dragoon, BWAPI::Broodwar->self()->getUnits());
+            }
+        }
+        else if (unit->getType().isRefinery())
+        {
+            Tools::GetDepot()->train(BWAPI::UnitTypes::Protoss_Probe);
+            Tools::GetDepot()->train(BWAPI::UnitTypes::Protoss_Probe);
+            Tools::GetDepot()->train(BWAPI::UnitTypes::Protoss_Probe);
+        }
+    }
+   
 }
 
 // Called whenever a unit appears, with a pointer to the destroyed unit
 // This is usually triggered when units appear from fog of war and become visible
 void StarterBot::onUnitShow(BWAPI::Unit unit)
 { 
-	
+    //std::cout << unit->getType().getName();
 }
 
 void StarterBot::onUnitDiscover(BWAPI::Unit unit)
 {
+    //std::cout << unit->getType().getName();
 
     //if (t1.joinable()) t1.join();
 

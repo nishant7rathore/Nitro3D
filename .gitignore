@@ -32,3 +32,6 @@ windows/starcraft/*.mpq
 *.exe
 windows/starcraft/Errors/2021 Mar 23.txt
 *.ERR
+windows/starcraft/bwapi-data/bwapi.ini
+windows/c++/visualstudio/results.json
+windows/starcraft/bwapi-data/bwapi.ini

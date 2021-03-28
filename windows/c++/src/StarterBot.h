@@ -5,6 +5,7 @@
 #include <BWAPI.h>
 #include <thread>
 #include <mutex>
+#include "StrategyManager.h"
 
 
 class ResourceManager
@@ -14,6 +15,7 @@ public:
 
 	Grid<BWAPI::Unit> m_mineralResource;      // mineral resource handle
 	Grid<BWAPI::Unit> m_refineryResource;      // refinery resource handle
+
 
 	ResourceManager();
 	void calculateDistances();
@@ -27,6 +29,7 @@ class StarterBot
 {
     MapTools m_mapTools;
 	ResourceManager m_resourceManager;
+	StrategyManager m_strategyManager;
 	std::thread t1;
 	int count = 7;
 

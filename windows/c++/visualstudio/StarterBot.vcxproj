@@ -11,21 +11,23 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\BuildingStrategyManager.h" />
     <ClInclude Include="..\src\Grid.hpp" />
     <ClInclude Include="..\src\MapTools.h" />
     <ClInclude Include="..\src\StarterBot.h" />
+    <ClInclude Include="..\src\StrategyManager.h" />
     <ClInclude Include="..\src\Tools.h" />
-    <ClInclude Include="BuildingStrategyManager.h" />
+    <ClInclude Include="..\src\UnitStrategyManager.h" />
     <ClInclude Include="Profiler.hpp" />
-    <ClInclude Include="StrategyManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\BuildingStrategyManager.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\MapTools.cpp" />
     <ClCompile Include="..\src\StarterBot.cpp" />
+    <ClCompile Include="..\src\StrategyManager.cpp" />
     <ClCompile Include="..\src\Tools.cpp" />
-    <ClCompile Include="BuildingStrategyManager.cpp" />
-    <ClCompile Include="StrategyManager.cpp" />
+    <ClCompile Include="..\src\UnitStrategyManager.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>StarterBot</ProjectName>
