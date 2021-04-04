@@ -1,5 +1,4 @@
 #include "Tools.h"
-#include "BuildingStrategyManager.h"
 
 BWAPI::Unit Tools::GetClosestUnitTo(BWAPI::Position p, const BWAPI::Unitset& units)
 {
@@ -16,10 +15,46 @@ BWAPI::Unit Tools::GetClosestUnitTo(BWAPI::Position p, const BWAPI::Unitset& uni
     return closestUnit;
 }
 
+BWAPI::TilePosition lastSetPylonTilePosition = BWAPI::TilePositions::Invalid;
+BWAPI::TilePosition lastSetBFSPosition = BWAPI::TilePositions::Invalid;
+
 BWAPI::Unit Tools::GetClosestUnitTo(BWAPI::Unit unit, const BWAPI::Unitset& units)
 {
     if (!unit) { return nullptr; }
     return GetClosestUnitTo(unit->getPosition(), units);
+}
+
+BWAPI::Unit Tools::GetClosestResourceMineralToUnit(BWAPI::Position p)
+{
+    BWAPI::Unit closestUnit = nullptr;
+
+    for (auto& u : BWAPI::Broodwar->getStaticNeutralUnits())
+    {
+        if (!u->getType().isMineralField()) continue;
+
+        if (!closestUnit || u->getDistance(p) < u->getDistance(closestUnit))
+        {
+            closestUnit = u;
+        }
+    }
+    return closestUnit;
+}
+
+BWAPI::Unit Tools::GetClosestGeyserToUnit(BWAPI::Position p)
+{
+    BWAPI::Unit closestUnit = nullptr;
+
+    for (auto& u : BWAPI::Broodwar->getStaticNeutralUnits())
+    {
+        if (!u->getType() == BWAPI::UnitTypes::Resource_Vespene_Geyser) continue;
+
+        if (!closestUnit || u->getDistance(p) < u->getDistance(closestUnit))
+        {
+            closestUnit = u;
+        }
+    }
+
+    return closestUnit;
 }
 
 int Tools::CountUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units)
@@ -66,6 +101,56 @@ BWAPI::Unit Tools::GetUnitOfType(BWAPI::UnitType type)
     return nullptr;
 }
 
+
+BWAPI::Unit Tools::GetBuilderNotBuildingCurrentlyOfType(BWAPI::UnitType type)
+{
+    // For each unit that we own
+    for (auto& unit : BWAPI::Broodwar->self()->getUnits())
+    {
+        // if the unit is of the correct type, and it actually has been constructed, return it
+        if (unit->getType() == type && unit->isCompleted() && unit->getLastCommand().getType() != BWAPI::UnitCommandTypes::Build)
+        {
+            return unit;
+        }
+    }
+
+    // If we didn't find a valid unit to return, make sure we return nullptr
+    return nullptr;
+}
+
+
+BWAPI::Unit Tools::GetTrainerUnitNotFullOfType(BWAPI::UnitType type)
+{
+    // For each unit that we own
+    for (auto& unit : BWAPI::Broodwar->self()->getUnits())
+    {
+        // if the unit is of the correct type, and has a room to train this unit type, return it
+        if (unit->getType() == type.whatBuilds().first && unit->getTrainingQueue().size() < 5)
+        {
+            return unit;
+        }
+    }
+
+    // If we didn't find a valid unit to return, make sure we return nullptr
+    return nullptr;
+}
+
+BWAPI::Unit Tools::GetIdleBuilder()
+{
+    // For each builder that we own
+    for (auto& unit : BWAPI::Broodwar->self()->getUnits())
+    {
+        // if the worker's last command was not build, and it actually has been constructed, return it
+        if (unit->getType().isWorker() && unit->isCompleted() && unit->getLastCommand().getType() != BWAPI::UnitCommandTypes::Build)
+        {
+            return unit;
+        }
+    }
+
+    // If we didn't find a valid unit to return, make sure we return nullptr
+    return nullptr;
+}
+
 BWAPI::Unit Tools::GetDepot()
 {
     const BWAPI::UnitType depot = BWAPI::Broodwar->self()->getRace().getResourceDepot();
@@ -73,7 +158,7 @@ BWAPI::Unit Tools::GetDepot()
 }
 
 // Attempt tp construct a building of a given type 
-bool Tools::BuildBuilding(BWAPI::UnitType type)
+bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
 {
     // Get the type of unit that is required to build the desired building
     BWAPI::UnitType builderType = type.whatBuilds().first;
@@ -90,10 +175,63 @@ bool Tools::BuildBuilding(BWAPI::UnitType type)
     int maxBuildRange = 64;
     bool buildingOnCreep = type.requiresCreep();
 
-    BuildingStrategyManager bsm = BuildingStrategyManager();
-    BWAPI::TilePosition buildPos = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
-    bool hasBuilt = builder->build(type, buildPos);
+    bool hasBuilt = false;
 
+    BWAPI::TilePosition pos = BWAPI::TilePositions::Invalid;
+
+    if (type == BWAPI::UnitTypes::Protoss_Pylon)
+    {
+        if (BWAPI::Broodwar->self()->minerals() >= BWAPI::UnitTypes::Protoss_Pylon.mineralPrice())
+        {
+            if (lastSetPylonTilePosition.isValid() && !BWAPI::Broodwar->getUnitsOnTile(lastSetPylonTilePosition).size())
+            {
+                pos = lastSetPylonTilePosition;
+            }
+            else
+            {
+                pos = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
+                lastSetPylonTilePosition = pos;
+            }
+
+            hasBuilt = builder->build(type, pos);
+        }
+
+    }
+    else
+    {
+        if (BWAPI::TilePositions::None != pos)
+        {
+            
+            if (lastSetBFSPosition.isValid() && !BWAPI::Broodwar->getUnitsOnTile(lastSetBFSPosition).size())
+            {
+                pos = lastSetBFSPosition;
+                hasBuilt = builder->build(type, pos);
+                //small chance is that ths command may fail, need to put an additional check here 
+                if(!hasBuilt) lastSetBFSPosition = bsm.getBuildingLocation(type, builder, lastSetBFSPosition);
+            }
+            else
+            {
+                pos = bsm.getBuildingLocation(type, builder, lastSetBFSPosition);
+                // this need to be inside the else statement to avoid a duplicate call
+                hasBuilt = builder->build(type, pos);
+                lastSetBFSPosition = pos;
+            }
+
+ 
+        }
+    }
+
+   //BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
+
+
+    
+
+
+    if (!hasBuilt)
+    {
+        //hasBuilt = builder->build(BWAPI::UnitTypes::Protoss_Pylon, BWAPI::Broodwar->getBuildLocation(BWAPI::UnitTypes::Protoss_Pylon, desiredPos, maxBuildRange, buildingOnCreep));
+        //Tools::get
+    }
 
     //buildPos = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
     //builder->build(type, buildPos);

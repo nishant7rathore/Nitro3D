@@ -11,3 +11,4 @@ public:
 	BWAPI::TilePosition getUnitLocation(BWAPI::UnitType unit);
 	int getNumberOfUnits(BWAPI::UnitType unit);
 };
+

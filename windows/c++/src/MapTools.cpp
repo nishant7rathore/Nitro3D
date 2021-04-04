@@ -245,6 +245,15 @@ void MapTools::draw() const
     const int ex = sx + 20;
     const int ey = sy + 15;
 
+    for (int i = 0; i < m_width; ++i)
+    {
+        for (int j = 0; j < m_height; ++j)
+        {
+            const BWAPI::TilePosition tilePos(i, j);
+            BWAPI::Broodwar->drawTextScreen(BWAPI::Position(tilePos).x+10, BWAPI::Position(tilePos).y + 10,(std::to_string(tilePos.x)+std::to_string(tilePos.y)).c_str(), '\x04');
+        }
+    }
+
     for (int x = sx; x < ex; ++x)
     {
         for (int y = sy; y < ey; y++)

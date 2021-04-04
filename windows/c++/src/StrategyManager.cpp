@@ -5,6 +5,7 @@ StrategyManager::StrategyManager()
 	m_unitTypesToTotal.clear();
 	m_unitTypesToTotal.emplace(BWAPI::UnitTypes::Protoss_Nexus, 1);
 	m_unitTypesToTotal.emplace(BWAPI::UnitTypes::Protoss_Probe, 4);
+
 }
 
 void StrategyManager::getBuildOrderReady()
@@ -21,12 +22,23 @@ int& StrategyManager::getNumberOfUnits(BWAPI::UnitType unit)
 	return m_unitTypesToTotal[unit];
 }
 
+int& StrategyManager::getNumberOfCompletedUnits(BWAPI::UnitType unit)
+{
+	return m_unitTypesToTotalCompleted[unit];
+}
+
+std::map<BWAPI::UnitType, int> StrategyManager::getUnitTypesCompletedMap()
+{
+	return m_unitTypesToTotalCompleted;
+}
+
+
 std::map<BWAPI::UnitType, int> StrategyManager::getUnitTypesMap()
 {
 	return m_unitTypesToTotal;
 }
 
-BuildingStrategyManager StrategyManager::getBuildingStrategyManager()
+BuildingStrategyManager& StrategyManager::getBuildingStrategyManager()
 {
 	return m_buildingStrategyManager;
 }

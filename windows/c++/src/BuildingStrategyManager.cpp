@@ -1,8 +1,8 @@
 #include "BuildingStrategyManager.h"
 
-BuildingStrategyManager::BuildingStrategyManager()
+BuildingStrategyManager::BuildingStrategyManager() : m_lastBuiltLocation (BWAPI::Broodwar->self()->getStartLocation())
 {
-    m_buildingBuidOrder.clear();
+    this->m_buildingBuidOrder.clear();
 }
 
 //BFS Node
@@ -29,7 +29,7 @@ struct Direction
     int y = 0;
 };
 
-struct Direction directions[4] = { {1,0},{0,-1},{-1,0},{0,1} }; // legal Directions for BFS 
+struct Direction directions[4] = { {1,0},{0,1},{-1,0},{0,-1} }; // legal Directions for BFS 
 
 std::vector<BFSNode> openList; // BFS open list
 std::map<std::string, bool> closedList; // BFS closed map
@@ -38,11 +38,20 @@ std::map<std::string, bool>::iterator it; // iterator to loop over closed list
 std::vector<BFSNode> path; // final path 
 
 
-BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType building)
+BWAPI::TilePosition& BuildingStrategyManager::getLastBuiltLocation()
 {
-    BWAPI::TilePosition& pos = BWAPI::Broodwar->self()->getStartLocation();
+    return m_lastBuiltLocation;
+}
 
-    openList.push_back(BFSNode(pos.x, pos.y, 0, nullptr));
+
+BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType building, BWAPI::Unit builder, BWAPI::TilePosition lastBuiltLocation)
+{
+
+    openList.clear();
+    closedList.clear();
+
+
+    openList.push_back(BFSNode(m_lastBuiltLocation.x, m_lastBuiltLocation.y, 0, nullptr));
 
     size_t size = openList.size();
 
@@ -51,7 +60,9 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
         BFSNode node = openList[i];
 
         it = closedList.find(std::to_string(node.x) + std::to_string(node.y));
-        if (it == closedList.end()) closedList.emplace(std::to_string(node.x) + std::to_string(node.y), true);
+        if (it != closedList.end()) continue;
+            
+        closedList.emplace(std::to_string(node.x) + std::to_string(node.y), true);
 
         for (size_t d = 0; d < 4; d++)
         {
@@ -61,12 +72,32 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
 
             it = closedList.find(std::to_string(x) + std::to_string(y));
 
-            if (BWAPI::Broodwar->canBuildHere(BWAPI::TilePosition(x,y), building))
+            BWAPI::TilePosition childPos = BWAPI::TilePosition(x, y);
+
+            if (childPos.isValid() && BWAPI::Broodwar->canBuildHere(childPos, building))
             {
-                return BWAPI::TilePosition(x, y);
+                bool isSafe = true;
+
+                for (int tileX = 0; tileX<building.tileWidth(); tileX++)
+                {
+                    for (int tileY = 0; tileY < building.tileHeight(); tileY++)
+                    {
+                        if (BWAPI::Broodwar->getUnitsOnTile(childPos.x+tileX, childPos.y+tileY).size() > 0)
+                        {
+                            isSafe = false;
+                        }
+                    }
+                }
+                
+                if (isSafe || building.isRefinery())
+                {
+                    m_lastBuiltLocation.x = childPos.x;
+                    m_lastBuiltLocation.y = childPos.y;
+                    return m_lastBuiltLocation;
+                }
             }
 
-            if (it == closedList.end())
+            if (childPos.isValid() && it == closedList.end())
             {
                 openList.push_back(BFSNode(x,y,node.position++,&node));
                 size++;
@@ -75,6 +106,7 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
         }
 
     }
+    return BWAPI::TilePositions::None;
 }
 
 int BuildingStrategyManager::getNumberOfBuildings(BWAPI::UnitType building)

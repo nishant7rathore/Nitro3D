@@ -15,7 +15,7 @@ public:
 
 	Grid<BWAPI::Unit> m_mineralResource;      // mineral resource handle
 	Grid<BWAPI::Unit> m_refineryResource;      // refinery resource handle
-
+	bool isJobComplete = false;
 
 	ResourceManager();
 	void calculateDistances();
@@ -31,10 +31,11 @@ class StarterBot
 	ResourceManager m_resourceManager;
 	StrategyManager m_strategyManager;
 	std::thread t1;
-	int count = 7;
+	int resourceCount = 100;
 
 public:
 
+	std::thread& getThreadHandle();
 
     StarterBot(ResourceManager& rm);
 

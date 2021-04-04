@@ -87,5 +87,6 @@ void PlayGame()
         }
     }
 
+    if (bot.getThreadHandle().joinable()) bot.getThreadHandle().detach();
     std::cout << "Game Over\n";
 }

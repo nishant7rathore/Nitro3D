@@ -5,7 +5,7 @@
 #include <BWAPI.h>
 #include <vector>
 
-class MapTools
+struct MapTools
 {
     Grid<int>   m_walkable;       // whether a tile is buildable (includes static resources)          
     Grid<int>   m_buildable;      // whether a tile is buildable (includes static resources)
@@ -19,9 +19,6 @@ class MapTools
     bool canBuild(int tileX, int tileY) const;
     bool canWalk(int tileX, int tileY) const;
     void printMap() const;
-
-
-public:
 
     MapTools();
 
