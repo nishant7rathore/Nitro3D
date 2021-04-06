@@ -37,7 +37,7 @@ struct Direction
     int y = 0;
 };
 
-struct Direction directions[4] = { {1,0},{0,1},{-1,0},{0,-1} }; // legal Directions for BFS 
+struct Direction directions[8] = { {1,0},{0,1},{-1,0},{0,-1},{1,-1},{-1,1},{1,1},{-1,-1} }; // legal Directions for BFS 
 
 std::vector<BFSNode> openList; // BFS open list
 std::map<std::string, bool> closedList; // BFS closed map
@@ -72,7 +72,7 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
             
         closedList.emplace(std::to_string(node.x) + std::to_string(node.y), true);
 
-        for (size_t d = 0; d < 4; d++)
+        for (size_t d = 0; d < 8; d++)
         {
             
             int x = node.x + directions[d].x;
