@@ -186,14 +186,16 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
             if (lastSetPylonTilePosition.isValid() && BWAPI::Broodwar->getUnitsOnTile(lastSetPylonTilePosition).size() < 1)
             {
                 pos = lastSetPylonTilePosition;
+                hasBuilt = builder->build(type, pos);
+                if (!hasBuilt) lastSetPylonTilePosition = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
             }
             else
             {
                 pos = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
                 lastSetPylonTilePosition = pos;
+                hasBuilt = builder->build(type, pos);
             }
-
-            hasBuilt = builder->build(type, pos);
+            
         }
 
     }
