@@ -6,6 +6,9 @@
 /**
 * Nishant Rathore 
 * Rohan Parmar
+* 
+* We have an extension for this assignment, but after chatting with Dave, I was instructed to submit this. 
+* 
 */
 
 std::thread& StarterBot::getThreadHandle()
@@ -59,7 +62,7 @@ void StarterBot::onFrame()
     // Train more workers so we can gather more income
     trainAdditionalWorkers();
 
-    //createArmyBuildings();
+    buildArmy();
 
     // Build more supply if we are going to run out soon
     buildAdditionalSupply();
@@ -214,88 +217,11 @@ void StarterBot::trainAdditionalWorkers()
     }
 }
 
-BWAPI::Unitset zealots;
-BWAPI::Unitset defenders;
-BWAPI::Unitset workers;
-BWAPI::Position unitPosition = BWAPI::Positions::Invalid;
-BWAPI::UnitCommandType zealotsLastCommandType = BWAPI::UnitCommandTypes::None;
-int lastEnemeyAttackingID = -1;
-
 // Build more supply if we are going to run out soon
 void StarterBot::buildAdditionalSupply()
 {
         
     PROFILE_FUNCTION();
-
-    BWAPI::Unit builder = Tools::GetTrainerUnitNotFullOfType(BWAPI::UnitTypes::Protoss_Zealot);
-    if (builder)
-    {
-        if(!Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Templar_Archives, BWAPI::Broodwar->self()->getUnits()))
-        {
-            if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Zealot, BWAPI::Broodwar->self()->getUnits()) <= 5)
-            {
-                builder->train(BWAPI::UnitTypes::Protoss_Zealot);
-            }
-            if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Dragoon, BWAPI::Broodwar->self()->getUnits()) <= 5)
-            {
-                builder->train(BWAPI::UnitTypes::Protoss_Dragoon);
-            }
-        }
-        else if(Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Dark_Templar, BWAPI::Broodwar->self()->getUnits()) < 5)
-        {
-            builder->train(BWAPI::UnitTypes::Protoss_Dark_Templar);
-        }
-        else if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Corsair, BWAPI::Broodwar->self()->getUnits()) < 5)
-        {
-            builder = Tools::GetTrainerUnitNotFullOfType(BWAPI::UnitTypes::Protoss_Corsair);
-            if(builder) builder->train(BWAPI::UnitTypes::Protoss_Corsair);
-        }
-    }
-
-    bool isUnderAttack = false;
-
-    if(zealots.size() == 10)
-    {
-
-        for (BWAPI::TilePosition pos : BWAPI::Broodwar->getStartLocations())
-        {
-            int count = 0;
-
-            for (auto it = zealots.begin(); it!= zealots.end() && count < 10;it++)
-            {
-                count++;
-                if (!BWAPI::Broodwar->isExplored(pos))
-                {
-                    BWAPI::Unit unit = *it;
-                    if (unit->exists() && unit->isUnderAttack())
-                    {
-                        unitPosition = unit->getPosition();
-                        isUnderAttack = true;
-                        break;
-                    }
-                }
-            }
-            if (isUnderAttack)
-            {
-                break;
-            }
-            else if (unitPosition != BWAPI::Position(pos) && !BWAPI::Broodwar->isExplored(pos))
-            {
-                zealots.move(BWAPI::Position(pos));
-                unitPosition = BWAPI::Position(pos);
-            }
-      
-        }
-
-        BWAPI::Unit enemeyUnit = BWAPI::Broodwar->getClosestUnit(unitPosition, BWAPI::Filter::IsEnemy);
-        if (enemeyUnit && enemeyUnit->getID() != lastEnemeyAttackingID)
-        {
-            zealots.attack(enemeyUnit);
-            lastEnemeyAttackingID = enemeyUnit->getID();
-            unitPosition = BWAPI::Positions::Invalid;
-        }
-    }
-
 
     // Get the amount of supply supply we currently have unused
     const int unusedSupply = Tools::GetTotalSupply(true) - BWAPI::Broodwar->self()->supplyUsed();
@@ -324,6 +250,78 @@ void StarterBot::drawDebugInformation()
     BWAPI::Broodwar->drawTextScreen(BWAPI::Position(10, 10), "RathoreParmar\n");
     Tools::DrawUnitCommands();
     Tools::DrawUnitBoundingBoxes();
+}
+
+void StarterBot::buildArmy()
+{
+    BWAPI::Unit builder = Tools::GetTrainerUnitNotFullOfType(BWAPI::UnitTypes::Protoss_Zealot);
+    if (builder)
+    {
+        if (!Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Templar_Archives, BWAPI::Broodwar->self()->getUnits()))
+        {
+            if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Zealot, BWAPI::Broodwar->self()->getUnits()) <= 5)
+            {
+                builder->train(BWAPI::UnitTypes::Protoss_Zealot);
+            }
+            if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Dragoon, BWAPI::Broodwar->self()->getUnits()) <= 5)
+            {
+                builder->train(BWAPI::UnitTypes::Protoss_Dragoon);
+            }
+        }
+        else if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Dark_Templar, BWAPI::Broodwar->self()->getUnits()) < 5)
+        {
+            builder->train(BWAPI::UnitTypes::Protoss_Dark_Templar);
+        }
+        else if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Corsair, BWAPI::Broodwar->self()->getUnits()) < 5)
+        {
+            builder = Tools::GetTrainerUnitNotFullOfType(BWAPI::UnitTypes::Protoss_Corsair);
+            if (builder) builder->train(BWAPI::UnitTypes::Protoss_Corsair);
+        }
+    }
+
+    bool isUnderAttack = false;
+
+    if (zealots.size() == 10)
+    {
+
+        for (BWAPI::TilePosition pos : BWAPI::Broodwar->getStartLocations())
+        {
+            int count = 0;
+
+            for (auto it = zealots.begin(); it != zealots.end() && count < 10; it++)
+            {
+                count++;
+                if (!BWAPI::Broodwar->isExplored(pos))
+                {
+                    BWAPI::Unit unit = *it;
+                    if (unit->exists() && unit->isUnderAttack())
+                    {
+                        unitPosition = unit->getPosition();
+                        isUnderAttack = true;
+                        break;
+                    }
+                }
+            }
+            if (isUnderAttack)
+            {
+                break;
+            }
+            else if (unitPosition != BWAPI::Position(pos) && !BWAPI::Broodwar->isExplored(pos))
+            {
+                zealots.move(BWAPI::Position(pos));
+                unitPosition = BWAPI::Position(pos);
+            }
+
+        }
+
+        BWAPI::Unit enemeyUnit = BWAPI::Broodwar->getClosestUnit(unitPosition, BWAPI::Filter::IsEnemy);
+        if (enemeyUnit && enemeyUnit->getID() != lastEnemeyAttackingID)
+        {
+            zealots.attack(enemeyUnit);
+            lastEnemeyAttackingID = enemeyUnit->getID();
+            unitPosition = BWAPI::Positions::Invalid;
+        }
+    }
 }
 
 // Called whenever a unit is destroyed, with a pointer to the unit
@@ -447,14 +445,11 @@ void StarterBot::onUnitShow(BWAPI::Unit unit)
 
 void StarterBot::onUnitDiscover(BWAPI::Unit unit)
 {
-    //std::cout << unit->getType().getName();
-
-
     if (unit->isAttacking() && unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()))
     {
         defenders.attack(unit);
     }
-    else if (unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()) && unit->getType() == BWAPI::UnitTypes::Zerg_Zergling)
+    else if (unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()) && unit->getType() == BWAPI::UnitTypes::Zerg_Zergling && unit->getDistance(BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation())) < 10000)
     {
         workers.attack(unit);
     }

@@ -16,6 +16,13 @@ class StarterBot
 	std::thread t1;
 	int resourceCount = 100;
 
+	BWAPI::Unitset zealots;
+	BWAPI::Unitset defenders;
+	BWAPI::Unitset workers;
+	BWAPI::Position unitPosition = BWAPI::Positions::Invalid;
+	BWAPI::UnitCommandType zealotsLastCommandType = BWAPI::UnitCommandTypes::None;
+	int lastEnemeyAttackingID = -1;
+
 public:
 
 	std::thread& getThreadHandle();
@@ -27,6 +34,7 @@ public:
     void trainAdditionalWorkers();
     void buildAdditionalSupply();
     void drawDebugInformation();
+	void buildArmy();
 
     // functions that are triggered by various BWAPI events from main.cpp
 	void onStart();
