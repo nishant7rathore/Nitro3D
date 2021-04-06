@@ -183,7 +183,7 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
     {
         if (BWAPI::Broodwar->self()->minerals() >= BWAPI::UnitTypes::Protoss_Pylon.mineralPrice())
         {
-            if (lastSetPylonTilePosition.isValid() && !BWAPI::Broodwar->getUnitsOnTile(lastSetPylonTilePosition).size())
+            if (lastSetPylonTilePosition.isValid() && BWAPI::Broodwar->getUnitsOnTile(lastSetPylonTilePosition).size() < 1)
             {
                 pos = lastSetPylonTilePosition;
             }
