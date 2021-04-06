@@ -1,4 +1,5 @@
 #include "MapTools.h"
+#include "ResourceManager.h"
 
 #include <iostream>
 #include <sstream>
@@ -11,7 +12,7 @@ MapTools::MapTools()
     
 }
 
-void MapTools::onStart()
+void MapTools::onStart(ResourceManager& rm)
 {
     m_width          = BWAPI::Broodwar->mapWidth();
     m_height         = BWAPI::Broodwar->mapHeight();
@@ -28,6 +29,12 @@ void MapTools::onStart()
             m_buildable.set(x, y, canBuild(x, y));
             m_depotBuildable.set(x, y, canBuild(x, y));
             m_walkable.set(x, y, m_buildable.get(x,y) || canWalk(x, y));
+            BWAPI::Position pos(BWAPI::TilePosition(x, y));
+            Resource closestMineral = Tools::GetClosestResourceMineralToUnit(pos);
+            Resource closestGeyeser = Tools::GetClosestGeyserToUnit(pos);
+            rm.setMineralResource(x, y, closestMineral);
+            rm.setRefineryResource(x, y, closestGeyeser);
+
         }
     }
 
@@ -41,6 +48,7 @@ void MapTools::onStart()
 
         const int tileX = resource->getTilePosition().x;
         const int tileY = resource->getTilePosition().y;
+
 
         for (int x=tileX; x<tileX+resource->getType().tileWidth(); ++x)
         {

@@ -1,12 +1,15 @@
 #include "Tools.h"
 
+BWAPI::TilePosition lastSetPylonTilePosition = BWAPI::TilePositions::Invalid;
+BWAPI::TilePosition lastSetBFSPosition = BWAPI::TilePositions::Invalid;
+
 BWAPI::Unit Tools::GetClosestUnitTo(BWAPI::Position p, const BWAPI::Unitset& units)
 {
     BWAPI::Unit closestUnit = nullptr;
 
     for (auto& u : units)
     {
-        if (!closestUnit || u->getDistance(p) < u->getDistance(closestUnit))
+        if (!closestUnit || u->getDistance(p) < closestUnit->getDistance(p))
         {
             closestUnit = u;
         }
@@ -14,9 +17,6 @@ BWAPI::Unit Tools::GetClosestUnitTo(BWAPI::Position p, const BWAPI::Unitset& uni
 
     return closestUnit;
 }
-
-BWAPI::TilePosition lastSetPylonTilePosition = BWAPI::TilePositions::Invalid;
-BWAPI::TilePosition lastSetBFSPosition = BWAPI::TilePositions::Invalid;
 
 BWAPI::Unit Tools::GetClosestUnitTo(BWAPI::Unit unit, const BWAPI::Unitset& units)
 {
@@ -24,7 +24,7 @@ BWAPI::Unit Tools::GetClosestUnitTo(BWAPI::Unit unit, const BWAPI::Unitset& unit
     return GetClosestUnitTo(unit->getPosition(), units);
 }
 
-BWAPI::Unit Tools::GetClosestResourceMineralToUnit(BWAPI::Position p)
+Resource Tools::GetClosestResourceMineralToUnit(BWAPI::Position p)
 {
     BWAPI::Unit closestUnit = nullptr;
 
@@ -32,29 +32,29 @@ BWAPI::Unit Tools::GetClosestResourceMineralToUnit(BWAPI::Position p)
     {
         if (!u->getType().isMineralField()) continue;
 
-        if (!closestUnit || u->getDistance(p) < u->getDistance(closestUnit))
+        if (!closestUnit || u->getDistance(p) < closestUnit->getDistance(p))
         {
             closestUnit = u;
         }
     }
-    return closestUnit;
+    return Resource(closestUnit->getID(),closestUnit->getTilePosition().x, closestUnit->getTilePosition().y, closestUnit->getInitialResources(), false);
 }
 
-BWAPI::Unit Tools::GetClosestGeyserToUnit(BWAPI::Position p)
+Resource Tools::GetClosestGeyserToUnit(BWAPI::Position p)
 {
     BWAPI::Unit closestUnit = nullptr;
 
     for (auto& u : BWAPI::Broodwar->getStaticNeutralUnits())
     {
-        if (!u->getType() == BWAPI::UnitTypes::Resource_Vespene_Geyser) continue;
+        if (u->getType() != BWAPI::UnitTypes::Resource_Vespene_Geyser) continue;
 
-        if (!closestUnit || u->getDistance(p) < u->getDistance(closestUnit))
+        if (!closestUnit || u->getDistance(p) < closestUnit->getDistance(p))
         {
             closestUnit = u;
         }
     }
 
-    return closestUnit;
+    return Resource(closestUnit->getID(),closestUnit->getTilePosition().x, closestUnit->getTilePosition().y, closestUnit->getInitialResources(),true);
 }
 
 int Tools::CountUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units)
@@ -220,25 +220,6 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
  
         }
     }
-
-   //BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
-
-
-    
-
-
-    if (!hasBuilt)
-    {
-        //hasBuilt = builder->build(BWAPI::UnitTypes::Protoss_Pylon, BWAPI::Broodwar->getBuildLocation(BWAPI::UnitTypes::Protoss_Pylon, desiredPos, maxBuildRange, buildingOnCreep));
-        //Tools::get
-    }
-
-    //buildPos = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
-    //builder->build(type, buildPos);
-
-    //buildPos = BWAPI::Broodwar->getBuildLocation(BWAPI::UnitTypes::Protoss_Forge, desiredPos, maxBuildRange, buildingOnCreep);
-
-    //bool hasBuilt = builder->build(BWAPI::UnitTypes::Protoss_Forge, desiredPos);
 
     return hasBuilt;
 }

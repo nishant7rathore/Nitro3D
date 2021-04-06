@@ -2,14 +2,15 @@
 
 #include <BWAPI.h>
 #include "BuildingStrategyManager.h"
+#include "ResourceManager.h"
 
 namespace Tools
 {
 
     BWAPI::Unit GetClosestUnitTo(BWAPI::Position p, const BWAPI::Unitset& units);
     BWAPI::Unit GetClosestUnitTo(BWAPI::Unit unit, const BWAPI::Unitset& units);
-    BWAPI::Unit GetClosestResourceMineralToUnit(BWAPI::Position p);
-    BWAPI::Unit GetClosestGeyserToUnit(BWAPI::Position p);
+    Resource GetClosestResourceMineralToUnit(BWAPI::Position p);
+    Resource GetClosestGeyserToUnit(BWAPI::Position p);
 
     int CountUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units);
 

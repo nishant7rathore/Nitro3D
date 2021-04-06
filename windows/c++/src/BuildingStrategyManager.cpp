@@ -3,6 +3,14 @@
 BuildingStrategyManager::BuildingStrategyManager() : m_lastBuiltLocation (BWAPI::Broodwar->self()->getStartLocation())
 {
     this->m_buildingBuidOrder.clear();
+
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Cybernetics_Core, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Citadel_of_Adun, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Photon_Cannon, 5);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Gateway, 2);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Forge, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Stargate, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Templar_Archives, 1);
 }
 
 //BFS Node
@@ -112,4 +120,9 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
 int BuildingStrategyManager::getNumberOfBuildings(BWAPI::UnitType building)
 {
     return m_buildingBuidOrder[building];
+}
+
+std::map<BWAPI::UnitType, int> BuildingStrategyManager::getBuildingOrderMap()
+{
+    return m_buildingBuidOrder;
 }

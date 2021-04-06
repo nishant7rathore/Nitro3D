@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Grid.hpp"
-
 #include <BWAPI.h>
 #include <vector>
+#include "Tools.h"
+#include "ResourceManager.h"
+
 
 struct MapTools
 {
@@ -22,7 +23,7 @@ struct MapTools
 
     MapTools();
 
-    void    onStart();
+    void onStart(ResourceManager& rm);
     void    onFrame();
     void    draw() const;
     void    toggleDraw();

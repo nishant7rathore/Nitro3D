@@ -8,7 +8,7 @@ public:
 
 	std::map<BWAPI::UnitType,int> m_unitBuildOrder;
 
-	BWAPI::TilePosition getUnitLocation(BWAPI::UnitType unit);
+	//BWAPI::TilePosition getUnitLocation(BWAPI::UnitType unit);
 	int getNumberOfUnits(BWAPI::UnitType unit);
 };
 

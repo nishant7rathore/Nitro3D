@@ -12,5 +12,6 @@ public:
 	BWAPI::TilePosition& getLastBuiltLocation();
 	BWAPI::TilePosition getBuildingLocation(BWAPI::UnitType building, BWAPI::Unit builder, BWAPI::TilePosition lastBuiltLocation);
 	int getNumberOfBuildings(BWAPI::UnitType building);
+	std::map<BWAPI::UnitType, int> getBuildingOrderMap();
 };
 

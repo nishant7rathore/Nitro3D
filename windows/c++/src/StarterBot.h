@@ -8,23 +8,6 @@
 #include "StrategyManager.h"
 
 
-class ResourceManager
-{
-
-public:
-
-	Grid<BWAPI::Unit> m_mineralResource;      // mineral resource handle
-	Grid<BWAPI::Unit> m_refineryResource;      // refinery resource handle
-	bool isJobComplete = false;
-
-	ResourceManager();
-	void calculateDistances();
-	BWAPI::Unit getMineralResource(int x, int y);
-	void setMineralResource(int x, int y, BWAPI::Unit unit);
-	BWAPI::Unit getRefineryResource(int x, int y);
-	void setRefineryResource(int x, int y, BWAPI::Unit unit);
-};
-
 class StarterBot
 {
     MapTools m_mapTools;
