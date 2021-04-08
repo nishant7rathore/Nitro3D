@@ -12,6 +12,8 @@ struct MapTools
     Grid<int>   m_buildable;      // whether a tile is buildable (includes static resources)
     Grid<int>   m_depotBuildable; // whether a depot is buildable on a tile (illegal within 3 tiles of static resource)
     Grid<int>   m_lastSeen;       // the last time any of our units has seen this position on the map
+    std::vector<Resource> m_baseLocationMinerals;
+    std::vector<Resource> m_allMinerals;
     int         m_width = 0;
     int         m_height = 0;
     int         m_frame = 0;
@@ -45,4 +47,5 @@ struct MapTools
     bool    isBuildable(const BWAPI::TilePosition& tile) const;
     bool    isDepotBuildableTile(int tileX, int tileY) const;
     void    drawTile(int tileX, int tileY, const BWAPI::Color & color) const;
+
 };

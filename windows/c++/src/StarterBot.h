@@ -35,6 +35,7 @@ public:
     void buildAdditionalSupply();
     void drawDebugInformation();
 	void buildArmy();
+	void buildBuildings ();
 
     // functions that are triggered by various BWAPI events from main.cpp
 	void onStart();

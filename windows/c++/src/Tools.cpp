@@ -40,6 +40,96 @@ Resource Tools::GetClosestResourceMineralToUnit(BWAPI::Position p)
     return Resource(closestUnit->getID(),closestUnit->getTilePosition().x, closestUnit->getTilePosition().y, closestUnit->getInitialResources(), false);
 }
 
+
+std::vector<Resource> Tools::GetAllMinerals(BWAPI::Position p)
+{
+    std::vector<Resource> allMinerals;
+
+    for (auto& unit : BWAPI::Broodwar->getStaticNeutralUnits())
+    {
+        if (!unit->getType().isMineralField()) continue;
+
+        if(!isMineralInOurList(unit, allMinerals)) allMinerals.push_back(Resource(unit->getID(), unit->getTilePosition().x, unit->getTilePosition().y, unit->getInitialResources(), false));
+    }
+
+    return allMinerals;
+}
+
+std::vector<Resource> Tools::GetBaseLocationMineralsList(std::vector<Resource>& allMineralsList)
+{
+    BWAPI::Unit resourceDepot = Tools::GetDepot();
+
+    std::vector<Resource> resourceList;
+
+    Resource currentResource;
+
+    int distance = INT_MAX;
+
+    for (auto& res : allMineralsList)
+    {
+        currentResource = Resource();
+        distance = INT_MAX;
+
+        for (auto& resource : allMineralsList)
+        {
+            if (isResourceInOurList(resource, resourceList)) continue;
+            int newDistance = resourceDepot->getDistance(BWAPI::Position(BWAPI::TilePosition(resource.m_x, resource.m_y)));
+
+            if (newDistance < distance)
+            {
+                distance = newDistance;
+                currentResource = resource;
+            }
+        }
+
+        if(!isResourceInOurList(currentResource, resourceList)) resourceList.push_back(currentResource);
+    }
+
+    return resourceList;
+    
+}
+
+
+bool Tools::isResourceInOurList(Resource& resource, std::vector<Resource>& resourceList)
+{
+    std::vector<Resource>::iterator it;
+
+    for (it = resourceList.begin(); it != resourceList.end(); it++)
+    {
+        if (resource.m_id == it->m_id)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+bool Tools::isMineralInOurList(BWAPI::Unit mineral, std::vector<Resource>& resourceList)
+{
+    std::vector<Resource>::iterator it;
+
+    for (it = resourceList.begin(); it != resourceList.end(); it++)
+    {
+        if (mineral->getID() == it->m_id)
+        {
+            return true;
+        }
+
+        //check if any of the units in the range are in the list
+        for (auto unit : mineral->getUnitsInRadius(256, BWAPI::Filter::IsResourceContainer))
+        {
+            if (unit->getID() == it->m_id)
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 Resource Tools::GetClosestGeyserToUnit(BWAPI::Position p)
 {
     BWAPI::Unit closestUnit = nullptr;
@@ -183,44 +273,16 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
     {
         if (BWAPI::Broodwar->self()->minerals() >= BWAPI::UnitTypes::Protoss_Pylon.mineralPrice())
         {
-            if (lastSetPylonTilePosition.isValid() && BWAPI::Broodwar->getUnitsOnTile(lastSetPylonTilePosition).size() < 1)
-            {
-                pos = lastSetPylonTilePosition;
-                hasBuilt = builder->build(type, pos);
-                if (!hasBuilt) lastSetPylonTilePosition = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
-            }
-            else
-            {
-                pos = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
-                lastSetPylonTilePosition = pos;
-                hasBuilt = builder->build(type, pos);
-            }
-            
+            lastSetPylonTilePosition = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
+            hasBuilt = builder->build(type, lastSetPylonTilePosition);
         }
 
     }
     else
     {
-        if (BWAPI::TilePositions::None != pos)
-        {
-            
-            if (lastSetBFSPosition.isValid() && !BWAPI::Broodwar->getUnitsOnTile(lastSetBFSPosition).size())
-            {
-                pos = lastSetBFSPosition;
-                hasBuilt = builder->build(type, pos);
-                //small chance is that ths command may fail, need to put an additional check here 
-                if(!hasBuilt) lastSetBFSPosition = bsm.getBuildingLocation(type, builder, lastSetBFSPosition);
-            }
-            else
-            {
-                pos = bsm.getBuildingLocation(type, builder, lastSetBFSPosition);
-                // this need to be inside the else statement to avoid a duplicate call
-                hasBuilt = builder->build(type, pos);
-                lastSetBFSPosition = pos;
-            }
 
- 
-        }
+        lastSetBFSPosition = bsm.getBuildingLocation(type, builder, pos);
+        hasBuilt = builder->build(type, lastSetBFSPosition);
     }
 
     return hasBuilt;
@@ -300,17 +362,17 @@ int Tools::GetTotalSupply(bool inProgress)
     }
 
     // one last tricky case: if a unit is currently on its way to build a supply provider, add it
-    for (auto& unit : BWAPI::Broodwar->self()->getUnits())
-    {
-        // get the last command given to the unit
-        const BWAPI::UnitCommand& command = unit->getLastCommand();
+    //for (auto& unit : BWAPI::Broodwar->self()->getUnits())
+    //{
+    //    // get the last command given to the unit
+    //    const BWAPI::UnitCommand& command = unit->getLastCommand();
 
-        // if it's not a build command we can ignore it
-        if (command.getType() != BWAPI::UnitCommandTypes::Build) { continue; }
+    //    // if it's not a build command we can ignore it
+    //    if (command.getType() != BWAPI::UnitCommandTypes::Build) { continue; }
 
-        // add the supply amount of the unit that it's trying to build
-        totalSupply += command.getUnitType().supplyProvided();
-    }
+    //    // add the supply amount of the unit that it's trying to build
+    //    totalSupply += command.getUnitType().supplyProvided();
+    //}
 
     return totalSupply;
 }

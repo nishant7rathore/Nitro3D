@@ -14,8 +14,12 @@ MapTools::MapTools()
 
 void MapTools::onStart(ResourceManager& rm)
 {
+    m_allMinerals = Tools::GetAllMinerals(BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
+    m_allMinerals = Tools::GetBaseLocationMineralsList(m_allMinerals);
+
     m_width          = BWAPI::Broodwar->mapWidth();
     m_height         = BWAPI::Broodwar->mapHeight();
+
     m_walkable       = Grid<int>(m_width, m_height, 1);
     m_buildable      = Grid<int>(m_width, m_height, 0);
     m_depotBuildable = Grid<int>(m_width, m_height, 0);
@@ -34,7 +38,6 @@ void MapTools::onStart(ResourceManager& rm)
             Resource closestGeyeser = Tools::GetClosestGeyserToUnit(pos);
             rm.setMineralResource(x, y, closestMineral);
             rm.setRefineryResource(x, y, closestGeyeser);
-
         }
     }
 

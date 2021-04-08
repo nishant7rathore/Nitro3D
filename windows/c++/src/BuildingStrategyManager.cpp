@@ -3,14 +3,17 @@
 BuildingStrategyManager::BuildingStrategyManager() : m_lastBuiltLocation (BWAPI::Broodwar->self()->getStartLocation())
 {
     this->m_buildingBuidOrder.clear();
-
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Gateway, 2);
-    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Cybernetics_Core, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Assimilator, 1);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Forge, 1);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Photon_Cannon, 5);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Cybernetics_Core, 1);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Citadel_of_Adun, 1);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Templar_Archives, 1);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Stargate, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Fleet_Beacon, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Robotics_Facility, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Observatory, 1);
 }
 
 //BFS Node
