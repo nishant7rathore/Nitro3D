@@ -26,9 +26,9 @@ namespace Tools
     BWAPI::Unit GetIdleBuilder();
     BWAPI::Unit GetDepot();
 
-    bool BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm);
 
     void DrawUnitBoundingBoxes();
+    bool BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, bool isAdditionalSupplyNeeded);
     void DrawUnitCommands();
 
     void SmartRightClick(BWAPI::Unit unit, BWAPI::Unit target);

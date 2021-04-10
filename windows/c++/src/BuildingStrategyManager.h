@@ -12,6 +12,7 @@ public:
 	BWAPI::TilePosition& getLastBuiltLocation();
 	BWAPI::TilePosition getBuildingLocation(BWAPI::UnitType building, BWAPI::Unit builder, BWAPI::TilePosition lastBuiltLocation);
 	int getNumberOfBuildings(BWAPI::UnitType building);
+	bool isSafeToPlaceHere(BWAPI::UnitType building, BWAPI::TilePosition childPos);
 	std::map<BWAPI::UnitType, int> getBuildingOrderMap();
 };
 

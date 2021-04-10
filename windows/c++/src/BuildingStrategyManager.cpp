@@ -3,17 +3,19 @@
 BuildingStrategyManager::BuildingStrategyManager() : m_lastBuiltLocation (BWAPI::Broodwar->self()->getStartLocation())
 {
     this->m_buildingBuidOrder.clear();
-    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Gateway, 2);
-    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Assimilator, 1);
-    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Forge, 1);
-    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Photon_Cannon, 5);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Gateway, 3);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Cybernetics_Core, 1);
-    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Citadel_of_Adun, 1);
-    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Templar_Archives, 1);
-    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Stargate, 1);
-    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Fleet_Beacon, 1);
-    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Robotics_Facility, 1);
-    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Observatory, 1);
+    //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Nexus, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Forge, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Assimilator, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Photon_Cannon, 5);
+    //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Citadel_of_Adun, 1);
+    //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Templar_Archives, 1);
+    //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Fleet_Beacon, 1);
+    //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Robotics_Facility, 1);
+    //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Observatory, 1);
+
+    //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Stargate, 1);
 }
 
 //BFS Node
@@ -87,19 +89,8 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
 
             if (childPos.isValid() && BWAPI::Broodwar->canBuildHere(childPos, building))
             {
-                bool isSafe = true;
-
-                for (int tileX = 0; tileX<building.tileWidth(); tileX++)
-                {
-                    for (int tileY = 0; tileY < building.tileHeight(); tileY++)
-                    {
-                        if (BWAPI::Broodwar->getUnitsOnTile(childPos.x+tileX, childPos.y+tileY).size() > 0)
-                        {
-                            isSafe = false;
-                        }
-                    }
-                }
-                
+                bool isSafe = isSafeToPlaceHere(building,childPos);
+  
                 if (isSafe || building.isRefinery())
                 {
                     m_lastBuiltLocation.x = childPos.x;
@@ -118,6 +109,25 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
 
     }
     return BWAPI::TilePositions::None;
+}
+
+
+bool BuildingStrategyManager::isSafeToPlaceHere(BWAPI::UnitType building, BWAPI::TilePosition childPos)
+{
+    bool isSafe = true;
+
+    for (int tileX = 0; tileX < building.tileWidth(); tileX++)
+    {
+        for (int tileY = 0; tileY < building.tileHeight(); tileY++)
+        {
+            if (BWAPI::Broodwar->getUnitsOnTile(childPos.x + tileX, childPos.y + tileY).size() > 0)
+            {
+                isSafe = false;
+            }
+        }
+    }
+
+    return isSafe && BWAPI::Broodwar->canBuildHere(childPos, building);
 }
 
 int BuildingStrategyManager::getNumberOfBuildings(BWAPI::UnitType building)

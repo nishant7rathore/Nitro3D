@@ -248,7 +248,7 @@ BWAPI::Unit Tools::GetDepot()
 }
 
 // Attempt tp construct a building of a given type 
-bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
+bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, bool isAdditionalSupplyNeeded)
 {
     // Get the type of unit that is required to build the desired building
     BWAPI::UnitType builderType = type.whatBuilds().first;
@@ -274,15 +274,19 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
         if (BWAPI::Broodwar->self()->minerals() >= BWAPI::UnitTypes::Protoss_Pylon.mineralPrice())
         {
             lastSetPylonTilePosition = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
-            hasBuilt = builder->build(type, lastSetPylonTilePosition);
+            hasBuilt = builder->build(type, lastSetPylonTilePosition) && bsm.isSafeToPlaceHere(type,lastSetPylonTilePosition);
+            isAdditionalSupplyNeeded = hasBuilt;
         }
 
     }
     else
     {
+        if (!isAdditionalSupplyNeeded)
+        {
+            lastSetBFSPosition = bsm.getBuildingLocation(type, builder, pos);
+            hasBuilt = builder->build(type, lastSetBFSPosition);
+        }
 
-        lastSetBFSPosition = bsm.getBuildingLocation(type, builder, pos);
-        hasBuilt = builder->build(type, lastSetBFSPosition);
     }
 
     return hasBuilt;
