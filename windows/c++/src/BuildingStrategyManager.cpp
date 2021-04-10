@@ -139,3 +139,13 @@ std::map<BWAPI::UnitType, int> BuildingStrategyManager::getBuildingOrderMap()
 {
     return m_buildingBuidOrder;
 }
+
+int& BuildingStrategyManager::getWorkerID()
+{
+    return m_workerID;
+}
+
+bool& BuildingStrategyManager::isAdditionalSupplyNeeded()
+{
+    return m_isAdditionalSupplyNeeded;
+}

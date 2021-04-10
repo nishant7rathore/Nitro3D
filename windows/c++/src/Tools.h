@@ -21,6 +21,7 @@ namespace Tools
     int CountBuildingUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units);
 
     BWAPI::Unit GetUnitOfType(BWAPI::UnitType type);
+    BWAPI::Unit GetWorkerExcluding(int ID);
     BWAPI::Unit GetBuilderNotBuildingCurrentlyOfType(BWAPI::UnitType type);
     BWAPI::Unit GetTrainerUnitNotFullOfType(BWAPI::UnitType type);
     BWAPI::Unit GetIdleBuilder();
@@ -28,7 +29,7 @@ namespace Tools
 
 
     void DrawUnitBoundingBoxes();
-    bool BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, bool isAdditionalSupplyNeeded);
+    bool BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm);
     void DrawUnitCommands();
 
     void SmartRightClick(BWAPI::Unit unit, BWAPI::Unit target);

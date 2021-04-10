@@ -82,7 +82,10 @@ std::vector<Resource> Tools::GetBaseLocationMineralsList(std::vector<Resource>& 
             }
         }
 
-        if(!isResourceInOurList(currentResource, resourceList)) resourceList.push_back(currentResource);
+        if (!isResourceInOurList(currentResource, resourceList))
+        {
+            resourceList.push_back(currentResource);
+        }
     }
 
     return resourceList;
@@ -118,7 +121,7 @@ bool Tools::isMineralInOurList(BWAPI::Unit mineral, std::vector<Resource>& resou
         }
 
         //check if any of the units in the range are in the list
-        for (auto unit : mineral->getUnitsInRadius(256, BWAPI::Filter::IsResourceContainer))
+        for (auto unit : mineral->getUnitsInRadius(512, BWAPI::Filter::IsResourceContainer))
         {
             if (unit->getID() == it->m_id)
             {
@@ -191,6 +194,22 @@ BWAPI::Unit Tools::GetUnitOfType(BWAPI::UnitType type)
     return nullptr;
 }
 
+BWAPI::Unit Tools::GetWorkerExcluding(int ID)
+{
+    // For each unit that we own
+    for (auto& unit : BWAPI::Broodwar->self()->getUnits())
+    {
+        // if the unit is of the correct type, and it actually has been constructed, return it
+        if (unit->getType().isWorker() && unit->isCompleted() && unit->getID() != ID)
+        {
+            return unit;
+        }
+    }
+
+    // If we didn't find a valid unit to return, make sure we return nullptr
+    return nullptr;
+}
+
 
 BWAPI::Unit Tools::GetBuilderNotBuildingCurrentlyOfType(BWAPI::UnitType type)
 {
@@ -248,14 +267,14 @@ BWAPI::Unit Tools::GetDepot()
 }
 
 // Attempt tp construct a building of a given type 
-bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, bool isAdditionalSupplyNeeded)
+bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
 {
     // Get the type of unit that is required to build the desired building
     BWAPI::UnitType builderType = type.whatBuilds().first;
 
     // Get a unit that we own that is of the given type so it can build
     // If we can't find a valid builder unit, then we have to cancel the building
-    BWAPI::Unit builder = Tools::GetUnitOfType(builderType);
+    BWAPI::Unit builder = Tools::GetWorkerExcluding(bsm.getWorkerID());
     if (!builder) { return false; }
 
     // Get a location that we want to build the building next to
@@ -275,13 +294,13 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, bo
         {
             lastSetPylonTilePosition = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
             hasBuilt = builder->build(type, lastSetPylonTilePosition) && bsm.isSafeToPlaceHere(type,lastSetPylonTilePosition);
-            isAdditionalSupplyNeeded = hasBuilt;
+            bsm.isAdditionalSupplyNeeded() = hasBuilt;
         }
 
     }
     else
     {
-        if (!isAdditionalSupplyNeeded)
+        if (!bsm.isAdditionalSupplyNeeded())
         {
             lastSetBFSPosition = bsm.getBuildingLocation(type, builder, pos);
             hasBuilt = builder->build(type, lastSetBFSPosition);
