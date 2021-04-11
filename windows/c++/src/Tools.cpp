@@ -55,11 +55,13 @@ std::vector<Resource> Tools::GetAllMinerals(BWAPI::Position p)
     return allMinerals;
 }
 
-std::vector<Resource> Tools::GetBaseLocationMineralsList(std::vector<Resource>& allMineralsList)
+std::vector<BWAPI::TilePosition> Tools::GetBaseLocationsList(std::vector<Resource>& allMineralsList)
 {
     BWAPI::Unit resourceDepot = Tools::GetDepot();
 
     std::vector<Resource> resourceList;
+
+    std::vector<BWAPI::TilePosition> baseLocations;
 
     Resource currentResource;
 
@@ -80,15 +82,22 @@ std::vector<Resource> Tools::GetBaseLocationMineralsList(std::vector<Resource>& 
                 distance = newDistance;
                 currentResource = resource;
             }
+
         }
 
         if (!isResourceInOurList(currentResource, resourceList))
         {
+            BWAPI::Unit closestUnit = BWAPI::Broodwar->getClosestUnit(BWAPI::Position(currentResource.m_x, currentResource.m_y), BWAPI::Filter::IsResourceDepot, 800);
+            if (!closestUnit)
+            {
+                BWAPI::TilePosition tilePos = BWAPI::Broodwar->getBuildLocation(BWAPI::UnitTypes::Protoss_Nexus, BWAPI::TilePosition(currentResource.m_x, currentResource.m_y), 64, false);
+                baseLocations.push_back(tilePos);
+            }
             resourceList.push_back(currentResource);
         }
     }
 
-    return resourceList;
+    return baseLocations;
     
 }
 

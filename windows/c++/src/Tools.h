@@ -11,7 +11,7 @@ namespace Tools
     BWAPI::Unit GetClosestUnitTo(BWAPI::Unit unit, const BWAPI::Unitset& units);
     Resource GetClosestResourceMineralToUnit(BWAPI::Position p);
     std::vector<Resource> GetAllMinerals(BWAPI::Position p);
-    std::vector<Resource> GetBaseLocationMineralsList(std::vector<Resource>& allMineralsList);
+    std::vector<BWAPI::TilePosition> GetBaseLocationsList(std::vector<Resource>& allMineralsList);
     bool isResourceInOurList(Resource& resource, std::vector<Resource>& resourceList);
     bool isMineralInOurList(BWAPI::Unit mineral, std::vector<Resource>& resourceList);
     Resource GetClosestGeyserToUnit(BWAPI::Position p);

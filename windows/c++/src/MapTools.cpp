@@ -15,7 +15,7 @@ MapTools::MapTools()
 void MapTools::onStart(ResourceManager& rm)
 {
     m_allMinerals = Tools::GetAllMinerals(BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
-    m_allMinerals = Tools::GetBaseLocationMineralsList(m_allMinerals);
+    m_baseLocations = Tools::GetBaseLocationsList(m_allMinerals);
 
     m_width          = BWAPI::Broodwar->mapWidth();
     m_height         = BWAPI::Broodwar->mapHeight();
