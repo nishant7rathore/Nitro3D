@@ -15,6 +15,7 @@ class StarterBot
 	StrategyManager m_strategyManager;
 	std::thread t1;
 	int resourceCount = 100;
+	int m_workersWanted = 15;
 
 	BWAPI::Unitset zealots;
 	BWAPI::Unitset defenders;

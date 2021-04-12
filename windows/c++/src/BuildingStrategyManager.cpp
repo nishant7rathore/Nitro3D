@@ -1,7 +1,9 @@
 #include "BuildingStrategyManager.h"
 
-BuildingStrategyManager::BuildingStrategyManager() : m_lastBuiltLocation (BWAPI::Broodwar->self()->getStartLocation())
+BuildingStrategyManager::BuildingStrategyManager()
 {
+    this->m_lastBuiltLocationMap.emplace(0, BWAPI::Broodwar->self()->getStartLocation());
+
     this->m_buildingBuidOrder.clear();
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Gateway, 3);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Cybernetics_Core, 1);
@@ -51,20 +53,21 @@ std::map<std::string, bool>::iterator it; // iterator to loop over closed list
 std::vector<BFSNode> path; // final path 
 
 
-BWAPI::TilePosition& BuildingStrategyManager::getLastBuiltLocation()
+BWAPI::TilePosition& BuildingStrategyManager::getLastBuiltLocation(int base)
 {
-    return m_lastBuiltLocation;
+    return m_lastBuiltLocationMap[base];
 }
 
 
-BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType building, BWAPI::Unit builder, BWAPI::TilePosition lastBuiltLocation)
+BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType building, BWAPI::Unit builder, int base)
 {
 
     openList.clear();
     closedList.clear();
 
+    BWAPI::TilePosition& lastBuiltLocation = m_lastBuiltLocationMap[base];
 
-    openList.push_back(BFSNode(m_lastBuiltLocation.x, m_lastBuiltLocation.y, 0, nullptr));
+    openList.push_back(BFSNode(lastBuiltLocation.x, lastBuiltLocation.y, 0, nullptr));
 
     size_t size = openList.size();
 
@@ -91,11 +94,11 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
             {
                 bool isSafe = isSafeToPlaceHere(building,childPos);
   
-                if (isSafe || building.isRefinery())
+                if (isSafe || building.isRefinery() || building == BWAPI::UnitTypes::Protoss_Pylon)
                 {
-                    m_lastBuiltLocation.x = childPos.x;
-                    m_lastBuiltLocation.y = childPos.y;
-                    return m_lastBuiltLocation;
+                    lastBuiltLocation.x = childPos.x;
+                    lastBuiltLocation.y = childPos.y;
+                    return lastBuiltLocation;
                 }
             }
 

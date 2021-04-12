@@ -3,8 +3,6 @@
 StrategyManager::StrategyManager()
 {
 	m_unitTypesToTotal.clear();
-	m_unitTypesToTotal.emplace(BWAPI::UnitTypes::Protoss_Nexus, 1);
-	m_unitTypesToTotal.emplace(BWAPI::UnitTypes::Protoss_Probe, 4);
 
 }
 

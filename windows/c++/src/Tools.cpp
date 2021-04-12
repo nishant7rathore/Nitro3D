@@ -1,7 +1,6 @@
 #include "Tools.h"
 
 BWAPI::TilePosition lastSetPylonTilePosition = BWAPI::TilePositions::Invalid;
-BWAPI::TilePosition lastSetBFSPosition = BWAPI::TilePositions::Invalid;
 
 BWAPI::Unit Tools::GetClosestUnitTo(BWAPI::Position p, const BWAPI::Unitset& units)
 {
@@ -47,7 +46,7 @@ std::vector<Resource> Tools::GetAllMinerals(BWAPI::Position p)
 
     for (auto& unit : BWAPI::Broodwar->getStaticNeutralUnits())
     {
-        if (!unit->getType().isMineralField()) continue;
+        if (!unit->getType() == BWAPI::UnitTypes::Resource_Vespene_Geyser) continue;
 
         if(!isMineralInOurList(unit, allMinerals)) allMinerals.push_back(Resource(unit->getID(), unit->getTilePosition().x, unit->getTilePosition().y, unit->getInitialResources(), false));
     }
@@ -87,12 +86,8 @@ std::vector<BWAPI::TilePosition> Tools::GetBaseLocationsList(std::vector<Resourc
 
         if (!isResourceInOurList(currentResource, resourceList))
         {
-            BWAPI::Unit closestUnit = BWAPI::Broodwar->getClosestUnit(BWAPI::Position(currentResource.m_x, currentResource.m_y), BWAPI::Filter::IsResourceDepot, 800);
-            if (!closestUnit)
-            {
-                BWAPI::TilePosition tilePos = BWAPI::Broodwar->getBuildLocation(BWAPI::UnitTypes::Protoss_Nexus, BWAPI::TilePosition(currentResource.m_x, currentResource.m_y), 64, false);
-                baseLocations.push_back(tilePos);
-            }
+            BWAPI::TilePosition tilePos = BWAPI::Broodwar->getBuildLocation(BWAPI::UnitTypes::Protoss_Nexus, BWAPI::TilePosition(currentResource.m_x, currentResource.m_y));
+            baseLocations.push_back(tilePos);
             resourceList.push_back(currentResource);
         }
     }
@@ -301,18 +296,20 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
     {
         if (BWAPI::Broodwar->self()->minerals() >= BWAPI::UnitTypes::Protoss_Pylon.mineralPrice())
         {
-            lastSetPylonTilePosition = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
-            hasBuilt = builder->build(type, lastSetPylonTilePosition) && bsm.isSafeToPlaceHere(type,lastSetPylonTilePosition);
-            bsm.isAdditionalSupplyNeeded() = hasBuilt;
+            if (lastSetPylonTilePosition == BWAPI::TilePositions::Invalid || BWAPI::Broodwar->getUnitsOnTile(lastSetPylonTilePosition).size() > 0)
+            {
+                pos = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
+                lastSetPylonTilePosition = pos;
+            }
+            hasBuilt = builder->build(type, lastSetPylonTilePosition) && bsm.isSafeToPlaceHere(type, lastSetPylonTilePosition);
         }
-
     }
     else
     {
         if (!bsm.isAdditionalSupplyNeeded())
         {
-            lastSetBFSPosition = bsm.getBuildingLocation(type, builder, pos);
-            hasBuilt = builder->build(type, lastSetBFSPosition);
+            pos = bsm.getBuildingLocation(type, builder,0);
+            hasBuilt = builder->build(type, pos);
         }
 
     }

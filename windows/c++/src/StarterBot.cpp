@@ -83,12 +83,16 @@ void StarterBot::onFrame()
 }
 
 BWAPI::TilePosition baseLocationTilePos;
+BWAPI::TilePosition nexusTilePos;
 
 void StarterBot::findAdditionalBases()
 {
 
     int& workerID = m_strategyManager.getBuildingStrategyManager().getWorkerID();
-    if (defenders.size() < 5 && zealots.size() < 10) return;
+
+    int& numOfNexus = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Nexus);
+
+    if (defenders.size() < 2 || zealots.size() < 2 || numOfNexus > 1) return;
 
     if (workerID != -1 && BWAPI::Broodwar->getUnit(workerID)->exists())
     {
@@ -102,40 +106,21 @@ void StarterBot::findAdditionalBases()
 
     for (auto baseLocation: m_mapTools.m_baseLocations)
     {
-        if (!BWAPI::Broodwar->isVisible(baseLocation) && worker->move(BWAPI::Position(baseLocation)))
+        BWAPI::Unit closestUnit = BWAPI::Broodwar->getClosestUnit(BWAPI::Position(baseLocation), BWAPI::Filter::IsResourceDepot, 512);
+        if (!closestUnit)
         {
-            workerID = worker->getID();
-            baseLocationTilePos = baseLocation;
-            return;
+            if (worker->move(BWAPI::Position(baseLocation)))
+            {
+                workerID = worker->getID();
+                baseLocationTilePos = baseLocation;
+                return;
+            }
         }
+     
     }
 }
 
-std::mutex m;
-
-void ResourceManager::calculateDistances()
-{
-    std::lock_guard<std::mutex> guard(m);
-
-    int height = BWAPI::Broodwar->mapHeight();
-    int width = BWAPI::Broodwar->mapWidth();
-
-    for (int i=0;i<height;i++) 
-    {
-        for (int j = 0; j<width; j++)
-        {
-            BWAPI::Position pos(BWAPI::TilePosition(j, i));
-            Resource closestMineral = Tools::GetClosestResourceMineralToUnit(pos);
-            Resource closestGeyeser = Tools::GetClosestGeyserToUnit(pos);
-            setMineralResource(j, i, closestMineral);
-            setRefineryResource(j, i, closestGeyeser);
-        }
-    }
-
-    isJobComplete = true;
-}
-
-
+//TODO:: update this code
 void StarterBot::doUpgrades()
 {
     if (BWAPI::Broodwar->canUpgrade(BWAPI::UpgradeTypes::Protoss_Ground_Weapons))
@@ -184,9 +169,8 @@ void StarterBot::sendIdleWorkersToMinerals()
     // Let's send all of our starting workers to the closest mineral to them
     // First we need to loop over all of the units that we (BWAPI::Broodwar->self()) own
     const BWAPI::Unitset& myUnits = BWAPI::Broodwar->self()->getUnits();
-    BWAPI::TilePosition refineryPosition(0,0);
-
-
+    const BWAPI::UnitType workerType = BWAPI::Broodwar->self()->getRace().getWorker();
+    const int workersOwned = Tools::CountUnitsOfType(workerType, BWAPI::Broodwar->self()->getUnits());
 
     for (auto& unit : myUnits)
     {
@@ -207,12 +191,21 @@ void StarterBot::sendIdleWorkersToMinerals()
 
         //std::string t = std::to_string(closestMineral->getTilePosition().x) + " " + std::to_string(closestMineral->getTilePosition().y);
 
+
         // Check the unit type, if it is an idle worker, then we want to send it somewhere
         if (unit->getType().isWorker() && unit->isIdle() && !unit->isMoving() && !unit->isAttacking())
         {
             //int numAssimilitorUnits = BWAPI::Broodwar->getUnitsOnTile(m_resourceManager.getRefineryResource(unit->getTilePosition().x, unit->getTilePosition().y).m_x, m_resourceManager.getRefineryResource(unit->getTilePosition().x, unit->getTilePosition().y).m_y).size();
 
-            if (closestMineral) { unit->rightClick(closestMineral); }
+            if (workersOwned < 17)
+            { 
+                if(closestMineral) unit->rightClick(closestMineral);
+            }
+            else
+            {
+                BWAPI::Unit refinery = Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Assimilator);
+                if(refinery) unit->rightClick(refinery);
+            }
           
         }
     }
@@ -223,11 +216,10 @@ void StarterBot::trainAdditionalWorkers()
 {
 
     const BWAPI::UnitType workerType = BWAPI::Broodwar->self()->getRace().getWorker();
-    const int workersWanted = 15;
     const int workersOwned = Tools::CountUnitsOfType(workerType, BWAPI::Broodwar->self()->getUnits());
     // get the unit pointer to my depot
     const BWAPI::Unit myDepot = Tools::GetDepot();
-    if (workersOwned <= workersWanted)
+    if (workersOwned <= m_workersWanted)
     {
         // if we have a valid depot unit and it's currently not training something, train a worker
         // there is no reason for a bot to ever use the unit queueing system, it just wastes resources
@@ -251,6 +243,8 @@ void StarterBot::buildAdditionalSupply()
         return;
     }
 
+    m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded() = true;
+
     // Otherwise, we are going to build a supply provider
     const BWAPI::UnitType supplyProviderType = BWAPI::Broodwar->self()->getRace().getSupplyProvider();
 
@@ -271,6 +265,8 @@ void StarterBot::drawDebugInformation()
     Tools::DrawUnitBoundingBoxes();
 }
 
+int pylonCount = 0;
+
 void StarterBot::buildBuildings()
 {
     if (m_strategyManager.getBuildingStrategyManager().getWorkerID() != -1) return;
@@ -279,6 +275,8 @@ void StarterBot::buildBuildings()
 
     std::map<BWAPI::UnitType, int> map = m_strategyManager.getBuildingStrategyManager().getBuildingOrderMap();
     std::map<BWAPI::UnitType, int>::iterator it;
+
+    bool built = false;
 
     for (it = map.begin(); it != map.end(); it++)
     {
@@ -293,12 +291,19 @@ void StarterBot::buildBuildings()
 
         int& numUnits = m_strategyManager.getNumberOfUnits(it->first);
 
+        if (it->first == BWAPI::UnitTypes::Protoss_Assimilator)
+        {
+            numUnits = Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Assimilator, BWAPI::Broodwar->self()->getUnits());
+        }
+
         if (BWAPI::Broodwar->self()->isUnitAvailable(it->first) && numUnits < m_strategyManager.getBuildingStrategyManager().getNumberOfBuildings(it->first) && mineralsLeft >= mineralPrice && gasLeft >= gasPrice)
         {
-            if (it->first == BWAPI::UnitTypes::Protoss_Assimilator && Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Probe, BWAPI::Broodwar->self()->getUnits()) < 16) continue;
-            else if (it->first == BWAPI::UnitTypes::Protoss_Assimilator) numUnits = Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Assimilator, BWAPI::Broodwar->self()->getUnits());
+            if (it->first == BWAPI::UnitTypes::Protoss_Assimilator && Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Probe, BWAPI::Broodwar->self()->getUnits()) < 16)
+            {
+                continue;
+            }
 
-            bool built = Tools::BuildBuilding(it->first, m_strategyManager.getBuildingStrategyManager());
+            built = Tools::BuildBuilding(it->first, m_strategyManager.getBuildingStrategyManager());
 
             if (built)
             {
@@ -309,6 +314,25 @@ void StarterBot::buildBuildings()
             }
         }
     }
+
+    if (!built && m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Nexus) > 1 && !m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded())
+    {
+        BWAPI::Unit builder = Tools::GetWorkerExcluding(-1);
+
+        if (!pylonCount)
+        {
+            //Tools::BuildBuilding(BWAPI::UnitTypes::Protoss_Pylon,nexusTilePos);
+            BWAPI::TilePosition pos = m_strategyManager.getBuildingStrategyManager().getBuildingLocation(BWAPI::UnitTypes::Protoss_Pylon, builder,1);
+            builder->build(BWAPI::UnitTypes::Protoss_Pylon, pos);
+            pylonCount++;
+        }
+        else
+        {
+            BWAPI::TilePosition pos = m_strategyManager.getBuildingStrategyManager().getBuildingLocation(BWAPI::UnitTypes::Protoss_Photon_Cannon, builder,1);
+            builder->build(BWAPI::UnitTypes::Protoss_Photon_Cannon, pos);
+        }
+    }
+
 }
 bool isUnderAttack = false;
 bool isScoutingAllowed = false;
@@ -435,9 +459,15 @@ void StarterBot::onUnitDestroy(BWAPI::Unit unit)
     }
     if (unit != nullptr && !unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()) && (unit->getType() == BWAPI::UnitTypes::Protoss_Zealot || unit->getType() == BWAPI::UnitTypes::Protoss_Dragoon || unit->getType() == BWAPI::UnitTypes::Protoss_Dark_Templar))
     {
-        if (zealots.size() > 0) zealots.erase(unit);
+        if (zealots.size() > 0)
+        {
+            zealots.erase(unit);
+        }
         if (zealots.size() == 0) isScoutingAllowed = false;
-        if (defenders.size() > 0) defenders.erase(unit);
+        if (defenders.size() > 0)
+        {
+            defenders.erase(unit);
+        }
 
         //for (auto it = defenders.begin(); it != defenders.end(); it++)
         //{
@@ -489,6 +519,12 @@ void StarterBot::onUnitCreate(BWAPI::Unit unit)
     int& numUnits = m_strategyManager.getNumberOfUnits(unit->getType());
     numUnits++;
 
+    if (unit->getType() == BWAPI::UnitTypes::Protoss_Nexus)
+    {
+        int& ID = m_strategyManager.getBuildingStrategyManager().getWorkerID();
+        ID = -1;
+        m_strategyManager.getBuildingStrategyManager().getLastBuiltLocation(numUnits - 1) = unit->getTilePosition();
+    }
 }
 
 // Called whenever a unit finished construction, with a pointer to the unit
@@ -498,22 +534,15 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
     int& numCompletedUnits = m_strategyManager.getNumberOfCompletedUnits(unit->getType());
     numCompletedUnits++;
 
-    if (m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Assimilator) && unit->getType().isWorker())
-    {
-        unit->rightClick(Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Assimilator));
-    }
-    else if (m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Pylon))
+    if (unit->getType() == BWAPI::UnitTypes::Protoss_Pylon)
     {
         m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded() = false;
     }
-
     if (unit->getType().isBuilding())
     {
         if (unit->getType().isRefinery())
         {
-            Tools::GetDepot()->train(BWAPI::UnitTypes::Protoss_Probe);
-            Tools::GetDepot()->train(BWAPI::UnitTypes::Protoss_Probe);
-            Tools::GetDepot()->train(BWAPI::UnitTypes::Protoss_Probe);
+            m_workersWanted += 3;
         }
         //if (unit->getType().buildsWhat().count(BWAPI::UnitTypes::Protoss_Zealot))
         //{
@@ -552,7 +581,7 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
         }
         else
         {
-            defenders.emplace(unit);
+            //defenders.emplace(unit);
         }
     }
     else
@@ -579,7 +608,9 @@ void StarterBot::onUnitDiscover(BWAPI::Unit unit)
     {
         if (unit->getDistance(zealots.getPosition()) < 1000)
         {
-            zealots.attack(unit);
+            std::cout << "base attackers in action " << std::endl;
+            BWAPI::Unit u = unit->getClosestUnit(BWAPI::Filter::IsEnemy);
+            if (u && !u->getType().isBuilding() && u->canAttack() && !u->isAttacking() && !u->getType().isWorker()) zealots.attack(unit);
         }
         std::cout << "Defenders in action " << std::endl;
         BWAPI::Unit u = unit->getClosestUnit(BWAPI::Filter::IsEnemy);
@@ -602,40 +633,3 @@ void StarterBot::onUnitRenegade(BWAPI::Unit unit)
 	
 }
 
-Resource::Resource(int id, size_t x, size_t y, int resourceAmount, bool isGeyser): 
-                                                                        m_id(id),
-                                                                        m_x(x),
-                                                                        m_y(y),
-                                                                        m_resourceAmount(resourceAmount), 
-                                                                        m_isGeyser(isGeyser)
-{
-
-}
-
-ResourceManager::ResourceManager()
-{
-    int m_width = BWAPI::Broodwar->mapWidth();
-    int m_height = BWAPI::Broodwar->mapHeight();
-    m_mineralResource = Grid<Resource>(m_width, m_height, Resource());
-    m_refineryResource = Grid<Resource>(m_width, m_height, Resource());
-}
-
-Resource ResourceManager::getMineralResource(int x, int y)
-{
-    return m_mineralResource.get(x, y);
-}
-
-void ResourceManager::setMineralResource(int x, int y, Resource unit)
-{
-    m_mineralResource.set(x, y, unit);
-}
-
-Resource ResourceManager::getRefineryResource(int x, int y)
-{
-    return m_refineryResource.get(x, y);
-}
-
-void ResourceManager::setRefineryResource(int x, int y, Resource unit)
-{
-    m_refineryResource.set(x, y, unit);
-}
