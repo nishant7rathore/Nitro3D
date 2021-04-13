@@ -87,7 +87,10 @@ std::vector<BWAPI::TilePosition> Tools::GetBaseLocationsList(std::vector<Resourc
         if (!isResourceInOurList(currentResource, resourceList))
         {
             BWAPI::TilePosition tilePos = BWAPI::Broodwar->getBuildLocation(BWAPI::UnitTypes::Protoss_Nexus, BWAPI::TilePosition(currentResource.m_x, currentResource.m_y));
-            baseLocations.push_back(tilePos);
+            if (tilePos.isValid())
+            {
+                baseLocations.push_back(tilePos);
+            }
             resourceList.push_back(currentResource);
         }
     }
@@ -296,12 +299,14 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
     {
         if (BWAPI::Broodwar->self()->minerals() >= BWAPI::UnitTypes::Protoss_Pylon.mineralPrice())
         {
-            if (lastSetPylonTilePosition == BWAPI::TilePositions::Invalid || BWAPI::Broodwar->getUnitsOnTile(lastSetPylonTilePosition).size() > 0)
-            {
-                pos = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
-                lastSetPylonTilePosition = pos;
-            }
+            pos = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
+            lastSetPylonTilePosition = pos;
             hasBuilt = builder->build(type, lastSetPylonTilePosition) && bsm.isSafeToPlaceHere(type, lastSetPylonTilePosition);
+            /*if (lastSetPylonTilePosition == BWAPI::TilePositions::Invalid || BWAPI::Broodwar->getUnitsOnTile(lastSetPylonTilePosition).size() > 0)
+            {
+               
+            }*/
+   
         }
     }
     else
@@ -391,19 +396,40 @@ int Tools::GetTotalSupply(bool inProgress)
     }
 
     // one last tricky case: if a unit is currently on its way to build a supply provider, add it
-    //for (auto& unit : BWAPI::Broodwar->self()->getUnits())
-    //{
-    //    // get the last command given to the unit
-    //    const BWAPI::UnitCommand& command = unit->getLastCommand();
+    for (auto& unit : BWAPI::Broodwar->self()->getUnits())
+    {
+        // get the last command given to the unit
+        const BWAPI::UnitCommand& command = unit->getLastCommand();
 
-    //    // if it's not a build command we can ignore it
-    //    if (command.getType() != BWAPI::UnitCommandTypes::Build) { continue; }
+        // if it's not a build command we can ignore it
+        if (command.getType() != BWAPI::UnitCommandTypes::Build) { continue; }
 
-    //    // add the supply amount of the unit that it's trying to build
-    //    totalSupply += command.getUnitType().supplyProvided();
-    //}
+        // add the supply amount of the unit that it's trying to build
+        totalSupply += command.getUnitType().supplyProvided();
+    }
 
     return totalSupply;
+}
+
+
+bool Tools::checkIfBuildCommandAlreadyIssued(BWAPI::Unit builder, BWAPI::TilePosition pos)
+{
+    for (auto& unit : BWAPI::Broodwar->self()->getUnits())
+    {
+        //check if it is not a worker, if not, then ignore
+        if (builder->getID() != unit->getID()) continue;
+
+        // get the last command given to the unit
+        const BWAPI::UnitCommand& command = unit->getLastCommand();
+
+        // if it's not a build command we can ignore it
+        if (command.getType() != BWAPI::UnitCommandTypes::Build) { continue; }
+
+        return command.getTargetTilePosition() == pos;
+
+    }
+
+    return false;
 }
 
 void Tools::DrawUnitHealthBars()

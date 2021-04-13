@@ -1,4 +1,5 @@
 #include "BuildingStrategyManager.h"
+#include "Tools.h"
 
 BuildingStrategyManager::BuildingStrategyManager()
 {
@@ -18,6 +19,14 @@ BuildingStrategyManager::BuildingStrategyManager()
     //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Observatory, 1);
 
     //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Stargate, 1);
+
+    this->m_additionalBaseBuildingMap.clear();
+    this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Pylon, 1);
+    this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Gateway, 1);
+    this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Photon_Cannon, 3);
+    this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Assimilator, 1);
+
+
 }
 
 //BFS Node
@@ -66,6 +75,7 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
     closedList.clear();
 
     BWAPI::TilePosition& lastBuiltLocation = m_lastBuiltLocationMap[base];
+
 
     openList.push_back(BFSNode(lastBuiltLocation.x, lastBuiltLocation.y, 0, nullptr));
 
@@ -138,9 +148,19 @@ int BuildingStrategyManager::getNumberOfBuildings(BWAPI::UnitType building)
     return m_buildingBuidOrder[building];
 }
 
+int BuildingStrategyManager::getSecondaryBaseNumberOfBuildings(BWAPI::UnitType building)
+{
+    return m_additionalBaseBuildingMap[building];
+}
+
 std::map<BWAPI::UnitType, int> BuildingStrategyManager::getBuildingOrderMap()
 {
     return m_buildingBuidOrder;
+}
+
+std::map<BWAPI::UnitType, int> BuildingStrategyManager::getAdditionalBaseBuildingOrderMap()
+{
+    return m_additionalBaseBuildingMap;
 }
 
 int& BuildingStrategyManager::getWorkerID()

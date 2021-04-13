@@ -41,7 +41,14 @@ BuildingStrategyManager& StrategyManager::getBuildingStrategyManager()
 	return m_buildingStrategyManager;
 }
 
-UnitStrategyManager StrategyManager::getUnitStrategyManager()
+UnitStrategyManager& StrategyManager::getUnitStrategyManager()
 {
 	return m_unitStrategyManager;
 }
+
+BaseManager& StrategyManager::getBaseManager()
+{
+	return m_baseManager;
+}
+
+

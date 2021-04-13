@@ -4,6 +4,7 @@
 class BuildingStrategyManager
 {
 	std::map<int,BWAPI::TilePosition> m_lastBuiltLocationMap;
+	std::map<BWAPI::UnitType, int> m_additionalBaseBuildingMap;
 	int m_workerID = -1;
 	bool m_isAdditionalSupplyNeeded = false;
 
@@ -14,8 +15,10 @@ public:
 	BWAPI::TilePosition& getLastBuiltLocation(int base = 0);
 	BWAPI::TilePosition getBuildingLocation(BWAPI::UnitType building, BWAPI::Unit builder, int base = 0);
 	int getNumberOfBuildings(BWAPI::UnitType building);
+	int getSecondaryBaseNumberOfBuildings(BWAPI::UnitType building);
 	bool isSafeToPlaceHere(BWAPI::UnitType building, BWAPI::TilePosition childPos);
 	std::map<BWAPI::UnitType, int> getBuildingOrderMap();
+	std::map<BWAPI::UnitType, int> getAdditionalBaseBuildingOrderMap();
 	int& getWorkerID();
 	bool& isAdditionalSupplyNeeded();
 };

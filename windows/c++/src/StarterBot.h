@@ -13,6 +13,7 @@ class StarterBot
     MapTools m_mapTools;
 	ResourceManager m_resourceManager;
 	StrategyManager m_strategyManager;
+
 	std::thread t1;
 	int resourceCount = 100;
 	int m_workersWanted = 15;

@@ -36,6 +36,8 @@ namespace Tools
 
     int GetTotalSupply(bool inProgress = false);
 
+    bool checkIfBuildCommandAlreadyIssued(BWAPI::Unit builder, BWAPI::TilePosition pos);
+
     void DrawUnitHealthBars();
     void DrawHealthBar(BWAPI::Unit unit, double ratio, BWAPI::Color color, int yOffset);
 }

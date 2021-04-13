@@ -3,6 +3,8 @@
 #include <map>
 #include "BuildingStrategyManager.h"
 #include "UnitStrategyManager.h"
+#include "BaseManager.h"
+
 
 class StrategyManager
 {
@@ -13,6 +15,7 @@ class StrategyManager
 
 	BuildingStrategyManager m_buildingStrategyManager;
 	UnitStrategyManager m_unitStrategyManager;
+	BaseManager m_baseManager;
 
 public:
 
@@ -26,6 +29,7 @@ public:
 	std::map<BWAPI::UnitType, int> getUnitTypesCompletedMap();
 	std::map<BWAPI::UnitType, int> getUnitTypesMap();
 	BuildingStrategyManager& getBuildingStrategyManager();
-	UnitStrategyManager getUnitStrategyManager();
+	UnitStrategyManager& getUnitStrategyManager();
+	BaseManager& getBaseManager();
 
 };
