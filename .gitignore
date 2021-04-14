@@ -6,8 +6,6 @@ windows/starcraft/characters/*
 windows/starcraft/maps/*
 windows/starcraft/*.exe
 windows/starcraft/*.snp
-windows/starcraft/*.bat
-windows/starcraft/*.dll
 windows/starcraft/*.ini
 windows/starcraft/*.MPQ
 windows/starcraft/*.mpq
