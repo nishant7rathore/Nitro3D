@@ -13,7 +13,6 @@ windows/bin/*.json
 *.sdf
 *.suo
 *.opensdf
-*.dll
 *.o
 *.pd_
 *.bwta
