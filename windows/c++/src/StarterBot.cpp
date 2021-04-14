@@ -73,7 +73,7 @@ void StarterBot::onFrame()
 
     doUpgrades();
 
-    findAdditionalBases();
+    //findAdditionalBases();
 
     // Draw unit health bars, which brood war unfortunately does not do
     Tools::DrawUnitHealthBars();
@@ -92,13 +92,7 @@ void StarterBot::findAdditionalBases()
 
     int& numOfNexus = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Nexus);
 
-    if (defenders.size() < 2 || zealots.size() < 2 || numOfNexus > 1) return;
-
-    if (workerID != -1 && BWAPI::Broodwar->getUnit(workerID)->exists())
-    {
-        BWAPI::Broodwar->getUnit(workerID)->build(BWAPI::UnitTypes::Protoss_Nexus, baseLocationTilePos);
-        return;
-    }
+    if (defenders.size() < 2 || zealots.size() < 2 || numOfNexus > 1 || workerID != -1) return;
 
     BWAPI::Unit worker = Tools::GetWorkerExcluding(-1);
 
@@ -123,6 +117,8 @@ void StarterBot::findAdditionalBases()
 //TODO:: update this code
 void StarterBot::doUpgrades()
 {
+    if (m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded()) return;
+
     if (BWAPI::Broodwar->canUpgrade(BWAPI::UpgradeTypes::Protoss_Ground_Weapons))
     {
         Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Forge)->upgrade(BWAPI::UpgradeTypes::Protoss_Ground_Weapons);
@@ -219,6 +215,8 @@ void StarterBot::sendIdleWorkersToMinerals()
 void StarterBot::trainAdditionalWorkers()
 {
 
+    if (m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded()) return;
+
     const BWAPI::UnitType workerType = BWAPI::Broodwar->self()->getRace().getWorker();
     const int workersOwned = Tools::CountUnitsOfType(workerType, BWAPI::Broodwar->self()->getUnits());
     // get the unit pointer to my depot
@@ -273,7 +271,6 @@ BWAPI::TilePosition secondaryBasePylon = BWAPI::TilePositions::Invalid;
 
 void StarterBot::buildBuildings()
 {
-    if (m_strategyManager.getBuildingStrategyManager().getWorkerID() != -1) return;
 
     if (m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Pylon) < 1) return;
 
@@ -295,6 +292,12 @@ void StarterBot::buildBuildings()
 
         int& numUnits = m_strategyManager.getNumberOfUnits(it->first);
 
+
+        if (Tools::checkIfBuildCommandAlreadyIssued(it->first))
+        {
+            continue;
+        }
+
         if (it->first == BWAPI::UnitTypes::Protoss_Assimilator)
         {
             numUnits = Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Assimilator, BWAPI::Broodwar->self()->getUnits());
@@ -308,18 +311,40 @@ void StarterBot::buildBuildings()
             }
 
             built = Tools::BuildBuilding(it->first, m_strategyManager.getBuildingStrategyManager());
+        
 
             if (built)
             {
                 //numUnits = Tools::CountBuildingUnitsOfType(BWAPI::UnitTypes::Protoss_Gateway, BWAPI::Broodwar->self()->getUnits());
                 //std::cout << "Gateway Built " << numUnits << std::endl;
                 BWAPI::Broodwar->printf("Started Building %s", it->first.getName().c_str());
+                break;
                 //m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Gateway]= numUnits;
             }
         }
     }
 
-    if (!built && m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Nexus) > 1 && !m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded())
+
+    if (!built && m_strategyManager.getBuildingStrategyManager().getWorkerID() != -1 && BWAPI::Broodwar->getUnit(m_strategyManager.getBuildingStrategyManager().getWorkerID())->exists())
+    {
+        if (Tools::checkIfBuildCommandAlreadyIssued(BWAPI::UnitTypes::Protoss_Nexus))
+        {
+            return;
+        }
+
+        built = BWAPI::Broodwar->getUnit(m_strategyManager.getBuildingStrategyManager().getWorkerID())->build(BWAPI::UnitTypes::Protoss_Nexus, baseLocationTilePos);
+        if (built)
+        {
+            //numUnits = Tools::CountBuildingUnitsOfType(BWAPI::UnitTypes::Protoss_Gateway, BWAPI::Broodwar->self()->getUnits());
+            //std::cout << "Gateway Built " << numUnits << std::endl;
+            //BWAPI::Broodwar->printf("Started Building %s", BWAPI::UnitTypes::Protoss_Nexus.c_str());
+            //return;
+            //m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Gateway]= numUnits;
+            m_strategyManager.getBuildingStrategyManager().getLastBuiltLocation(1) = baseLocationTilePos;
+        }
+    }
+
+    else if (!built && m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Nexus) > 1 && !m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded())
     {
         int num = m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Nexus) - 1;
 
@@ -346,24 +371,29 @@ void StarterBot::buildBuildings()
             int numUnits = m_strategyManager.getBaseManager().getBuildingsCount(num,it->first);
 
 
+            if (it->first == BWAPI::UnitTypes::Protoss_Assimilator)
+            {
+                numUnits = Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Assimilator, BWAPI::Broodwar->self()->getUnits());
+            }
+
+
             if (BWAPI::Broodwar->self()->isUnitAvailable(it->first) && numUnits < m_strategyManager.getBuildingStrategyManager().getSecondaryBaseNumberOfBuildings(it->first) && mineralsLeft >= mineralPrice && gasLeft >= gasPrice)
             {
-              /*  if (it->first == BWAPI::UnitTypes::Protoss_Assimilator && Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Probe, BWAPI::Broodwar->self()->getUnits()) < 16)
-                {
-                    continue;
-                }*/
-                if (it->first != BWAPI::UnitTypes::Protoss_Pylon && it->first != BWAPI::UnitTypes::Protoss_Assimilator && m_strategyManager.getBaseManager().getBuildingsCount(num, BWAPI::UnitTypes::Protoss_Pylon) < 1)
+
+                if (it->first != BWAPI::UnitTypes::Protoss_Pylon  && m_strategyManager.getBaseManager().getBuildingsCount(num, BWAPI::UnitTypes::Protoss_Pylon) < 2)
                 {
                     continue;
                 }
 
 
+ /*               if (Tools::checkIfBuildCommandAlreadyIssued(it->first, builder->getID()) && it->first != BWAPI::UnitTypes::Protoss_Pylon)
+                {
+                    continue;
+                }*/
 
                 secondaryBasePylon = m_strategyManager.getBuildingStrategyManager().getBuildingLocation(it->first, builder, num);
                 built = builder->build(it->first, secondaryBasePylon);
                 
-                
-
 
                 if (built)
                 {
@@ -384,9 +414,11 @@ void StarterBot::buildBuildings()
 }
 bool isUnderAttack = false;
 bool isScoutingAllowed = false;
+int lastEnemyUnitID = -1;
 
 void StarterBot::buildArmy()
 {
+    if (m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded()) return;
     if (m_strategyManager.getBuildingStrategyManager().getWorkerID() != -1) return;
 
     BWAPI::Unit builder = Tools::GetTrainerUnitNotFullOfType(BWAPI::UnitTypes::Protoss_Zealot);
@@ -394,11 +426,11 @@ void StarterBot::buildArmy()
     {
         if (!Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Templar_Archives, BWAPI::Broodwar->self()->getUnits()))
         {
-            if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Zealot, BWAPI::Broodwar->self()->getUnits()) <= 5)
+            if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Zealot, BWAPI::Broodwar->self()->getUnits()) <= 10)
             {
                 builder->train(BWAPI::UnitTypes::Protoss_Zealot);
             }
-            if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Dragoon, BWAPI::Broodwar->self()->getUnits()) <= 5)
+            if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Dragoon, BWAPI::Broodwar->self()->getUnits()) <= 10)
             {
                 builder->train(BWAPI::UnitTypes::Protoss_Dragoon);
             }
@@ -450,49 +482,65 @@ void StarterBot::buildArmy()
 
     if (isUnderAttack)
     {
-        BWAPI::Unit enemeyUnit = zealots.getClosestUnit(BWAPI::Filter::IsEnemy, 512);
-        if (enemeyUnit)
-        {
-            //zealots.attack(enemeyUnit);
-            //std::cout << "Zealots attacking under 10" << std::endl;
-            return;
-        }
         isUnderAttack = false;
-    }
 
-    {
-        if (!isUnderAttack && isScoutingAllowed)
+        //BWAPI::Unit enemeyUnit = zealots.getClosestUnit(BWAPI::Filter::IsEnemy, 512);
+        for (auto it = zealots.begin(); it != zealots.end(); it++)
         {
-            //isUnderAttack = false;
-            for (BWAPI::TilePosition pos : BWAPI::Broodwar->getStartLocations())
+            BWAPI::Unit u = *it;
+            if (u && u->exists())
             {
-                if (!BWAPI::Broodwar->isExplored(pos))
+                BWAPI::Unit enemyUnit = u->getClosestUnit(BWAPI::Filter::IsEnemy, 512);
+                if (enemyUnit && u->getLastCommand().getTarget() && u->getLastCommand().getTarget()->getID() != enemyUnit->getID())
                 {
-                    BWAPI::Unit enemeyUnit = zealots.getClosestUnit(BWAPI::Filter::IsEnemy, 512);
-                    if (enemeyUnit)
-                    {
-                        zealots.attack(enemeyUnit);
-                        isUnderAttack = true;
-                        std::cout << "Under Attack" << std::endl;
-                        break;
-                    }
+                    u->attack(enemyUnit);
+                    isUnderAttack = true;
+                }
+            }
+        }
+    }
+    else if (!isUnderAttack && isScoutingAllowed)
+    {
+        bool isScoutingCompleted = true;
 
-                }
-                if (isUnderAttack)
+        //isUnderAttack = false;
+        for (BWAPI::TilePosition pos : BWAPI::Broodwar->getStartLocations())
+        {
+            if (!BWAPI::Broodwar->isExplored(pos))
+            {
+                for (auto it = zealots.begin(); it != zealots.end(); it++)
                 {
-                    break;
-                }
-                else if (!BWAPI::Broodwar->isExplored(pos))
-                {
-                    zealots.move(BWAPI::Position(pos));
-                    unitPosition = BWAPI::Position(pos);
+                    BWAPI::Unit u = *it;
+                    if (u && u->exists())
+                    {
+                        BWAPI::Unit enemyUnit = u->getClosestUnit(BWAPI::Filter::IsEnemy, 512);
+                        if (enemyUnit && (u->getLastCommand().getType() != BWAPI::UnitCommandTypes::Attack_Unit || (u->getLastCommand().getTarget() && u->getLastCommand().getTarget()->getID() != enemyUnit->getID())))
+                        {
+                            u->attack(enemyUnit);
+                            isUnderAttack = true;
+                        }
+                    }
                 }
 
             }
+            if (isUnderAttack)
+            {
+                break;
+            }
+            else if (!BWAPI::Broodwar->isExplored(pos))
+            {
+                zealots.move(BWAPI::Position(pos));
+                isScoutingCompleted = false;
+            }
 
         }
-    }
 
+        if (isScoutingCompleted)
+        {
+            //std::cout << BWAPI::Broodwar->enemy()->getStartLocation() << std::endl;
+        }
+
+    }
 
 
 }
@@ -660,10 +708,15 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
         {
             defenders.emplace(unit);
         }
-        else if (zealots.size() < 10 && !isUnderAttack)
+        else if ((zealots.size() < 10 && !isUnderAttack))
         {
             zealots.emplace(unit);
-            if (zealots.size() == 10) isScoutingAllowed = true;
+            //isUnderAttack = false;
+
+            if (zealots.size() == 10)
+            {
+                isScoutingAllowed = true;
+            }
         }
         else
         {
@@ -694,13 +747,25 @@ void StarterBot::onUnitDiscover(BWAPI::Unit unit)
     {
         if (unit->getDistance(zealots.getPosition()) < 1000)
         {
-            std::cout << "base attackers in action " << std::endl;
-            BWAPI::Unit u = unit->getClosestUnit(BWAPI::Filter::IsEnemy);
-            if (u && !u->getType().isBuilding() && u->canAttack() && !u->isAttacking() && !u->getType().isWorker()) zealots.attack(unit);
+            for (auto u: zealots)
+            {
+                if (u && (u->getLastCommand().getType() != BWAPI::UnitCommandTypes::Attack_Unit) || ( u->getLastCommand().getTarget() && u->getLastCommand().getTarget()->getID() != unit->getID()))
+                {
+                    std::cout << "base attackers in action " << std::endl;
+                    u->attack(unit);
+                }
+            }
         }
-        std::cout << "Defenders in action " << std::endl;
-        BWAPI::Unit u = unit->getClosestUnit(BWAPI::Filter::IsEnemy);
-        if(u && !u->getType().isBuilding() && u->canAttack() && !u->isAttacking() && !u->getType().isWorker()) defenders.attack(unit);
+        //BWAPI::Unit u = unit->getClosestUnit(BWAPI::Filter::IsEnemy);
+        //if(u && !u->getType().isBuilding() && u->canAttack() && !u->isAttacking() && !u->getType().isWorker()) defenders.attack(unit);
+        for (auto u : defenders)
+        {
+            if (u && (u->getLastCommand().getType() != BWAPI::UnitCommandTypes::Attack_Unit) || (u->getLastCommand().getTarget() && u->getLastCommand().getTarget()->getID() != unit->getID()))
+            {
+                std::cout << "Defenders in action " << std::endl;
+                u->attack(unit);
+            }
+        }
     }
 
 }

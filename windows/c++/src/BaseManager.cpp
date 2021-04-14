@@ -53,12 +53,12 @@ void BaseManager::addUnitToBase(BWAPI::Unit unit, int base)
 	if (unit->getType().isBuilding())
 	{
 		m_basesMap[base].m_buildings.push_back(unit->getID());
-		std::cout << "Adding: " << unit->getType();
+		//std::cout << "Adding: " << unit->getType();
 	}
 	else
 	{
 		m_basesMap[base].m_workers.push_back(unit->getID());
-		std::cout << "Adding Unit: " << unit->getType();
+		//std::cout << "Adding Unit: " << unit->getType();
 	}
 	
 	if (base == 2)
@@ -141,6 +141,7 @@ void BaseManager::removeUnitFromBase(BWAPI::Unit destroyedUnit)
 BWAPI::Unit BaseManager::getWorkerFromBase(int base)
 {
 	if (base < 0) return nullptr;
+	if (base > 1)  base = 1;
 
 	std::vector<int>::iterator workersIterator;
 

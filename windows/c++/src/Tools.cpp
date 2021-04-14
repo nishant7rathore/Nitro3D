@@ -257,7 +257,7 @@ BWAPI::Unit Tools::GetIdleBuilder()
     for (auto& unit : BWAPI::Broodwar->self()->getUnits())
     {
         // if the worker's last command was not build, and it actually has been constructed, return it
-        if (unit->getType().isWorker() && unit->isCompleted() && unit->getLastCommand().getType() != BWAPI::UnitCommandTypes::Build)
+        if (unit->getType().isWorker() && unit->isCompleted())
         {
             return unit;
         }
@@ -412,20 +412,35 @@ int Tools::GetTotalSupply(bool inProgress)
 }
 
 
-bool Tools::checkIfBuildCommandAlreadyIssued(BWAPI::Unit builder, BWAPI::TilePosition pos)
+bool Tools::checkIfBuildCommandAlreadyIssued(BWAPI::UnitType unitType)
 {
     for (auto& unit : BWAPI::Broodwar->self()->getUnits())
     {
-        //check if it is not a worker, if not, then ignore
-        if (builder->getID() != unit->getID()) continue;
-
         // get the last command given to the unit
         const BWAPI::UnitCommand& command = unit->getLastCommand();
 
         // if it's not a build command we can ignore it
         if (command.getType() != BWAPI::UnitCommandTypes::Build) { continue; }
 
-        return command.getTargetTilePosition() == pos;
+        return command.getUnitType() == unitType;
+
+    }
+
+    return false;
+}
+
+bool Tools::checkIfBuildCommandAlreadyIssued(BWAPI::UnitType unitType, int builderID)
+{
+    for (auto& unit : BWAPI::Broodwar->self()->getUnits())
+    {
+        if (unit->getID() != builderID) continue;
+        // get the last command given to the unit
+        const BWAPI::UnitCommand& command = unit->getLastCommand();
+
+        // if it's not a build command we can ignore it
+        if (command.getType() != BWAPI::UnitCommandTypes::Build) { continue; }
+
+        return command.getUnitType() == unitType;
 
     }
 
