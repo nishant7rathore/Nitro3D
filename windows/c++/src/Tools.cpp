@@ -267,10 +267,16 @@ BWAPI::Unit Tools::GetIdleBuilder()
     return nullptr;
 }
 
+BWAPI::Unit Tools::GetDepot(int base, BaseManager& bm)
+{
+    const BWAPI::UnitType depot = BWAPI::Broodwar->self()->getRace().getResourceDepot();
+    return bm.getUnitOfTypeFromBase(0,depot);
+}
+
 BWAPI::Unit Tools::GetDepot()
 {
     const BWAPI::UnitType depot = BWAPI::Broodwar->self()->getRace().getResourceDepot();
-    return GetUnitOfType(depot);
+    return Tools::GetUnitOfType(depot);
 }
 
 // Attempt tp construct a building of a given type 
@@ -301,7 +307,7 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
         {
             pos = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
             lastSetPylonTilePosition = pos;
-            hasBuilt = builder->build(type, lastSetPylonTilePosition) && bsm.isSafeToPlaceHere(type, lastSetPylonTilePosition);
+            hasBuilt = bsm.isSafeToPlaceHere(type, lastSetPylonTilePosition) && builder->build(type, lastSetPylonTilePosition);
             /*if (lastSetPylonTilePosition == BWAPI::TilePositions::Invalid || BWAPI::Broodwar->getUnitsOnTile(lastSetPylonTilePosition).size() > 0)
             {
                

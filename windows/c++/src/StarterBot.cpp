@@ -73,7 +73,7 @@ void StarterBot::onFrame()
 
     doUpgrades();
 
-    //findAdditionalBases();
+    findAdditionalBases();
 
     // Draw unit health bars, which brood war unfortunately does not do
     Tools::DrawUnitHealthBars();
@@ -192,20 +192,33 @@ void StarterBot::sendIdleWorkersToMinerals()
         {
             //int numAssimilitorUnits = BWAPI::Broodwar->getUnitsOnTile(m_resourceManager.getRefineryResource(unit->getTilePosition().x, unit->getTilePosition().y).m_x, m_resourceManager.getRefineryResource(unit->getTilePosition().x, unit->getTilePosition().y).m_y).size();
 
-            if (m_strategyManager.getBaseManager().getBaseofUnit(unit) > 0)
+            if (m_strategyManager.getBaseManager().getBaseofUnit(unit) > 0 && m_strategyManager.getBaseManager().getBuildingsCount(1,BWAPI::UnitTypes::Protoss_Nexus) > 0)
             {
-                continue;
+                if (closestMineral)
+                {
+                    unit->rightClick(closestMineral);
+                }              
+                else if(m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Assimilator) > 1)
+                {
+                    BWAPI::Unit assimilator = m_strategyManager.getBaseManager().getUnitOfTypeFromBase(1, BWAPI::UnitTypes::Protoss_Assimilator);
+                    if (assimilator) unit->rightClick(assimilator);
+                }
             }
 
-            if (workersOwned < 16)
-            { 
-                if(closestMineral) unit->rightClick(closestMineral);
-            }
             else
             {
-                BWAPI::Unit refinery = Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Assimilator);
-                if(refinery) unit->rightClick(refinery);
+                if (workersOwned < 16)
+                {
+                    if (closestMineral) unit->rightClick(closestMineral);
+                }
+                else
+                {
+                    BWAPI::Unit refinery = Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Assimilator);
+                    if (refinery) unit->rightClick(refinery);
+                }
             }
+
+         
           
         }
     }
@@ -233,7 +246,8 @@ void StarterBot::trainAdditionalWorkers()
 // Build more supply if we are going to run out soon
 void StarterBot::buildAdditionalSupply()
 {
-        
+    if (m_strategyManager.getBuildingStrategyManager().isBuildingBuiltNeeded()) return;
+
     PROFILE_FUNCTION();
 
     // Get the amount of supply supply we currently have unused
@@ -411,6 +425,11 @@ void StarterBot::buildBuildings()
         }
     }
 
+    if (built)
+    {
+        m_strategyManager.getBuildingStrategyManager().isBuildingBuiltNeeded() = true;
+    }
+
 }
 bool isUnderAttack = false;
 bool isScoutingAllowed = false;
@@ -420,6 +439,10 @@ void StarterBot::buildArmy()
 {
     if (m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded()) return;
     if (m_strategyManager.getBuildingStrategyManager().getWorkerID() != -1) return;
+
+    std::cout << BWAPI::Broodwar->enemy()->getStartLocation() << std::endl;
+
+    std::cout << BWAPI::Broodwar->enemy()->allUnitCount() << std::endl;
 
     BWAPI::Unit builder = Tools::GetTrainerUnitNotFullOfType(BWAPI::UnitTypes::Protoss_Zealot);
     if (builder)
@@ -537,7 +560,7 @@ void StarterBot::buildArmy()
 
         if (isScoutingCompleted)
         {
-            //std::cout << BWAPI::Broodwar->enemy()->getStartLocation() << std::endl;
+            
         }
 
     }
@@ -649,6 +672,11 @@ void StarterBot::onUnitCreate(BWAPI::Unit unit)
         }
         
         m_strategyManager.getBaseManager().addUnitToBase(unit, builder);
+
+        if (unit->getType().isBuilding() && unit->getType() != BWAPI::UnitTypes::Protoss_Pylon)
+        {
+            m_strategyManager.getBuildingStrategyManager().isBuildingBuiltNeeded() = false;;
+        }
     }
 
 }
@@ -710,7 +738,7 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
         }
         else if ((zealots.size() < 10 && !isUnderAttack))
         {
-            zealots.emplace(unit);
+            if(!isScoutingAllowed) zealots.emplace(unit);
             //isUnderAttack = false;
 
             if (zealots.size() == 10)

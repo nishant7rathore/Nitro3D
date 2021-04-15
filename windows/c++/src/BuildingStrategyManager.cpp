@@ -172,3 +172,8 @@ bool& BuildingStrategyManager::isAdditionalSupplyNeeded()
 {
     return m_isAdditionalSupplyNeeded;
 }
+
+bool& BuildingStrategyManager::isBuildingBuiltNeeded()
+{
+    return m_isBuildingBuiltNeeded;
+}

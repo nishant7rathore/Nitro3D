@@ -7,6 +7,7 @@ class BuildingStrategyManager
 	std::map<BWAPI::UnitType, int> m_additionalBaseBuildingMap;
 	int m_workerID = -1;
 	bool m_isAdditionalSupplyNeeded = false;
+	bool m_isBuildingBuiltNeeded = false;
 
 public:
 	BuildingStrategyManager();
@@ -21,5 +22,6 @@ public:
 	std::map<BWAPI::UnitType, int> getAdditionalBaseBuildingOrderMap();
 	int& getWorkerID();
 	bool& isAdditionalSupplyNeeded();
+	bool& isBuildingBuiltNeeded();
 };
 

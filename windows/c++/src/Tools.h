@@ -3,6 +3,7 @@
 #include <BWAPI.h>
 #include "BuildingStrategyManager.h"
 #include "ResourceManager.h"
+#include "BaseManager.h"
 
 namespace Tools
 {
@@ -25,6 +26,7 @@ namespace Tools
     BWAPI::Unit GetBuilderNotBuildingCurrentlyOfType(BWAPI::UnitType type);
     BWAPI::Unit GetTrainerUnitNotFullOfType(BWAPI::UnitType type);
     BWAPI::Unit GetIdleBuilder();
+    BWAPI::Unit GetDepot(int base, BaseManager& bm);
     BWAPI::Unit GetDepot();
 
 

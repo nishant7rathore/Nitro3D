@@ -28,5 +28,6 @@ public:
 		int BaseManager::getBaseofUnit(BWAPI::Unit unit);
 		const size_t getBuildingsCount(int base, BWAPI::UnitType unitType);
 		const size_t getNonBuildingsCount(int base, BWAPI::UnitType unitType);
+		BWAPI::Unit getUnitOfTypeFromBase(int base, BWAPI::UnitType unitType);
 };
 

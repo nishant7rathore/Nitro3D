@@ -217,7 +217,7 @@ const size_t BaseManager::getBuildingsCount(int base, BWAPI::UnitType unitType)
 
 const size_t BaseManager::getNonBuildingsCount(int base, BWAPI::UnitType unitType)
 {
-	const size_t count = m_basesMap[base].m_buildings.size();
+	const size_t count = m_basesMap[base].m_workers.size();
 
 	int sum = 0;
 
@@ -230,4 +230,34 @@ const size_t BaseManager::getNonBuildingsCount(int base, BWAPI::UnitType unitTyp
 	}
 
 	return sum;
+}
+
+BWAPI::Unit BaseManager::getUnitOfTypeFromBase(int base, BWAPI::UnitType unitType)
+{
+	if (unitType.isBuilding())
+	{
+		const size_t count = m_basesMap[base].m_buildings.size();
+
+		for (size_t i = 0; i < count; i++)
+		{
+			if (BWAPI::Broodwar->getUnit(m_basesMap[base].m_buildings[i])->getType() == unitType)
+			{
+				return BWAPI::Broodwar->getUnit(m_basesMap[base].m_buildings[i]);
+			}
+		}
+	}
+	else
+	{
+		const size_t count = m_basesMap[base].m_workers.size();
+
+		for (size_t i = 0; i < count; i++)
+		{
+			if (BWAPI::Broodwar->getUnit(m_basesMap[base].m_workers[i])->getType() == unitType)
+			{
+				return BWAPI::Broodwar->getUnit(m_basesMap[base].m_workers[i]);
+			}
+		}
+	}
+
+	return nullptr;
 }
