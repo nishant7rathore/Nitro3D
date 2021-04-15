@@ -128,9 +128,9 @@ bool Tools::isMineralInOurList(BWAPI::Unit mineral, std::vector<Resource>& resou
         }
 
         //check if any of the units in the range are in the list
-        for (auto unit : mineral->getUnitsInRadius(512, BWAPI::Filter::IsResourceContainer))
+        for (auto unit : mineral->getUnitsInRadius(512, BWAPI::Filter::IsNeutral))
         {
-            if (unit->getID() == it->m_id)
+            if (unit->getID() == it->m_id && unit->getType() == BWAPI::UnitTypes::Resource_Vespene_Geyser)
             {
                 return true;
             }
@@ -270,7 +270,7 @@ BWAPI::Unit Tools::GetIdleBuilder()
 BWAPI::Unit Tools::GetDepot(int base, BaseManager& bm)
 {
     const BWAPI::UnitType depot = BWAPI::Broodwar->self()->getRace().getResourceDepot();
-    return bm.getUnitOfTypeFromBase(0,depot);
+    return bm.getUnitOfTypeFromBase(base,depot);
 }
 
 BWAPI::Unit Tools::GetDepot()

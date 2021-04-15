@@ -233,12 +233,22 @@ void StarterBot::trainAdditionalWorkers()
     const BWAPI::UnitType workerType = BWAPI::Broodwar->self()->getRace().getWorker();
     const int workersOwned = Tools::CountUnitsOfType(workerType, BWAPI::Broodwar->self()->getUnits());
     // get the unit pointer to my depot
-    const BWAPI::Unit myDepot = Tools::GetDepot();
-    if (workersOwned <= m_workersWanted)
+    BWAPI::Unit myDepot = Tools::GetDepot();
+    if (workersOwned <= m_workersWanted && m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Nexus) < 2)
     {
         // if we have a valid depot unit and it's currently not training something, train a worker
         // there is no reason for a bot to ever use the unit queueing system, it just wastes resources
         if (myDepot && !myDepot->isTraining()) { myDepot->train(workerType); }
+    }
+    else
+    {
+        myDepot = Tools::GetDepot(1,m_strategyManager.getBaseManager());
+        if (workersOwned <= m_workersWanted && m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Nexus) > 1)
+        {
+            // if we have a valid depot unit and it's currently not training something, train a worker
+            // there is no reason for a bot to ever use the unit queueing system, it just wastes resources
+            if (myDepot && !myDepot->isTraining()) { myDepot->train(workerType); }
+        }
     }
  
 }
@@ -688,9 +698,9 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
     int& numCompletedUnits = m_strategyManager.getNumberOfCompletedUnits(unit->getType());
     numCompletedUnits++;
 
-    if (unit->getType() == BWAPI::UnitTypes::Protoss_Nexus)
+    if (unit->getType() == BWAPI::UnitTypes::Protoss_Nexus && numCompletedUnits > 1)
     {
-        std::cout << "Hola";
+        m_workersWanted += 5;
     }
 
     if (unit->getType() == BWAPI::UnitTypes::Protoss_Pylon)
@@ -701,7 +711,7 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
     {
         if (unit->getType().isRefinery())
         {
-            m_workersWanted += 3;
+            m_workersWanted += 2;
         }
 
         //m_strategyManager.getBaseManager().addUnitToBase(unit,m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Nexus));
