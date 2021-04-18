@@ -5,6 +5,7 @@
 #include <BWAPI.h>
 #include <thread>
 #include <mutex>
+#include <vector>
 #include "StrategyManager.h"
 
 
@@ -16,11 +17,11 @@ class StarterBot
 
 	std::thread t1;
 	int resourceCount = 100;
-	int m_workersWanted = 15;
+	int m_workersWanted = 20;
 
 	BWAPI::Unitset zealots;
 	BWAPI::Unitset defenders;
-	BWAPI::Unitset workers;
+	std::vector<BWAPI::Unit> workers;
 	BWAPI::Position unitPosition = BWAPI::Positions::Invalid;
 	BWAPI::UnitCommandType zealotsLastCommandType = BWAPI::UnitCommandTypes::None;
 	int lastEnemeyAttackingID = -1;

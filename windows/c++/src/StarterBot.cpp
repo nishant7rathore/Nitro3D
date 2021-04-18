@@ -7,8 +7,6 @@
 * Nishant Rathore 
 * Rohan Parmar
 * 
-* We have an extension for this assignment, but after chatting with Dave, I was instructed to submit this. 
-* 
 */
 
 std::thread& StarterBot::getThreadHandle()
@@ -37,7 +35,7 @@ void StarterBot::onStart()
     BWAPI::Broodwar->enableFlag(BWAPI::Flag::UserInput);
 
     //TODO: need to ask Dave about this flag
-    //BWAPI::Broodwar->enableFlag(BWAPI::Flag::CompleteMapInformation);
+    BWAPI::Broodwar->enableFlag(BWAPI::Flag::CompleteMapInformation);
 
     // Call MapTools OnStart
     //t1 = std::thread(&MapTools::onStart,std::ref(m_mapTools),std::ref(m_resourceManager));
@@ -73,7 +71,7 @@ void StarterBot::onFrame()
 
     doUpgrades();
 
-    findAdditionalBases();
+    //findAdditionalBases();
 
     // Draw unit health bars, which brood war unfortunately does not do
     Tools::DrawUnitHealthBars();
@@ -87,15 +85,13 @@ BWAPI::TilePosition nexusTilePos;
 
 void StarterBot::findAdditionalBases()
 {
+    if (m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded()) return;
 
     int& workerID = m_strategyManager.getBuildingStrategyManager().getWorkerID();
-
     int& numOfNexus = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Nexus);
-
     if (defenders.size() < 2 || zealots.size() < 2 || numOfNexus > 1 || workerID != -1) return;
 
     BWAPI::Unit worker = Tools::GetWorkerExcluding(-1);
-
     if (!worker) return;
 
     for (auto baseLocation: m_mapTools.m_baseLocations)
@@ -121,22 +117,26 @@ void StarterBot::doUpgrades()
 
     if (BWAPI::Broodwar->canUpgrade(BWAPI::UpgradeTypes::Protoss_Ground_Weapons))
     {
-        Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Forge)->upgrade(BWAPI::UpgradeTypes::Protoss_Ground_Weapons);
+        BWAPI::Unit unit = Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Forge);
+        if (unit) unit->upgrade(BWAPI::UpgradeTypes::Protoss_Ground_Weapons);
         return;
     }
     if (BWAPI::Broodwar->canUpgrade(BWAPI::UpgradeTypes::Protoss_Ground_Armor))
     {
-        Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Forge)->upgrade(BWAPI::UpgradeTypes::Protoss_Ground_Armor);
+        BWAPI::Unit unit = Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Forge);
+        if (unit) unit->upgrade(BWAPI::UpgradeTypes::Protoss_Ground_Armor);
         return;
     }
     if (BWAPI::Broodwar->canUpgrade(BWAPI::UpgradeTypes::Leg_Enhancements))
     {
-        Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Citadel_of_Adun)->upgrade(BWAPI::UpgradeTypes::Leg_Enhancements);
+        BWAPI::Unit unit = Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Citadel_of_Adun);
+        if (unit) unit->upgrade(BWAPI::UpgradeTypes::Leg_Enhancements);
         return;
     }
     if (BWAPI::Broodwar->canUpgrade(BWAPI::UpgradeTypes::Singularity_Charge))
     {
-        Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Cybernetics_Core)->upgrade(BWAPI::UpgradeTypes::Singularity_Charge);
+        BWAPI::Unit unit = Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Cybernetics_Core);
+        if(unit) unit->upgrade(BWAPI::UpgradeTypes::Singularity_Charge);
         return;
     }
 }
@@ -152,12 +152,16 @@ void StarterBot::sendIdleWorkersToMinerals()
 
     if (isZerglingRush)
     {
-        if (workers.getClosestUnit(BWAPI::Filter::IsEnemy))
+        BWAPI::Unit enemyUnit = nullptr;
+        for (size_t i=0; i< workers.size(); i++)
         {
-            workers.attack(workers.getClosestUnit(BWAPI::Filter::IsEnemy));
-            return;
+            enemyUnit = workers[i]->getClosestUnit(BWAPI::Filter::IsEnemy, 512);
+            if (enemyUnit && workers[i]->getLastCommand().getTarget() && workers[i]->getLastCommand().getTarget()->getID() != enemyUnit->getID())
+            {
+                workers[i]->attack(enemyUnit);
+            }
         }
-        isZerglingRush = false;
+        if(!enemyUnit) isZerglingRush = false;
     }
 
     PROFILE_FUNCTION();
@@ -207,7 +211,7 @@ void StarterBot::sendIdleWorkersToMinerals()
 
             else
             {
-                if (workersOwned < 16)
+                if (Tools::CountBaseUnitssWithFilter(0,BWAPI::Filter::IsGatheringMinerals && BWAPI::Filter::GetPlayer, m_strategyManager.getBaseManager()) < 21)
                 {
                     if (closestMineral) unit->rightClick(closestMineral);
                 }
@@ -234,7 +238,11 @@ void StarterBot::trainAdditionalWorkers()
     const int workersOwned = Tools::CountUnitsOfType(workerType, BWAPI::Broodwar->self()->getUnits());
     // get the unit pointer to my depot
     BWAPI::Unit myDepot = Tools::GetDepot();
-    if (workersOwned <= m_workersWanted && m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Nexus) < 2)
+    BWAPI::Unit mySecondDepot = Tools::GetDepot(1, m_strategyManager.getBaseManager());
+
+    int& numOfNexus = m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Nexus);
+
+    if (workersOwned <= m_workersWanted && !mySecondDepot)
     {
         // if we have a valid depot unit and it's currently not training something, train a worker
         // there is no reason for a bot to ever use the unit queueing system, it just wastes resources
@@ -242,12 +250,11 @@ void StarterBot::trainAdditionalWorkers()
     }
     else
     {
-        myDepot = Tools::GetDepot(1,m_strategyManager.getBaseManager());
-        if (workersOwned <= m_workersWanted && m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Nexus) > 1)
+        if (workersOwned <= m_workersWanted && numOfNexus > 1)
         {
             // if we have a valid depot unit and it's currently not training something, train a worker
             // there is no reason for a bot to ever use the unit queueing system, it just wastes resources
-            if (myDepot && !myDepot->isTraining()) { myDepot->train(workerType); }
+            if (mySecondDepot && !mySecondDepot->isTraining()) { mySecondDepot->train(workerType); }
         }
     }
  
@@ -256,7 +263,7 @@ void StarterBot::trainAdditionalWorkers()
 // Build more supply if we are going to run out soon
 void StarterBot::buildAdditionalSupply()
 {
-    if (m_strategyManager.getBuildingStrategyManager().isBuildingBuiltNeeded()) return;
+    //if (m_strategyManager.getBuildingStrategyManager().isBuildingBuiltNeeded()) return;
 
     PROFILE_FUNCTION();
 
@@ -269,14 +276,13 @@ void StarterBot::buildAdditionalSupply()
         return;
     }
 
-    m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded() = true;
-
     // Otherwise, we are going to build a supply provider
     const BWAPI::UnitType supplyProviderType = BWAPI::Broodwar->self()->getRace().getSupplyProvider();
 
     bool startedBuilding = Tools::BuildBuilding(supplyProviderType, m_strategyManager.getBuildingStrategyManager());
     if (startedBuilding)
     {
+        m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded() = true;
         BWAPI::Broodwar->printf("Started Building %s", supplyProviderType.getName().c_str());
     }
 
@@ -295,6 +301,11 @@ BWAPI::TilePosition secondaryBasePylon = BWAPI::TilePositions::Invalid;
 
 void StarterBot::buildBuildings()
 {
+
+
+    //BWAPI::TilePosition tPos = m_strategyManager.getBuildingStrategyManager().getCannonBuildingLocation(0, m_mapTools.m_walkable, m_mapTools.m_buildable);
+
+    //std::cout << tPos << std::endl;
 
     if (m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Pylon) < 1) return;
 
@@ -437,7 +448,7 @@ void StarterBot::buildBuildings()
 
     if (built)
     {
-        m_strategyManager.getBuildingStrategyManager().isBuildingBuiltNeeded() = true;
+        //m_strategyManager.getBuildingStrategyManager().isBuildingBuiltNeeded() = true;
     }
 
 }
@@ -447,28 +458,23 @@ int lastEnemyUnitID = -1;
 
 void StarterBot::buildArmy()
 {
+    //if (m_strategyManager.getBuildingStrategyManager().isBuildingBuiltNeeded()) return;
     if (m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded()) return;
     if (m_strategyManager.getBuildingStrategyManager().getWorkerID() != -1) return;
-
-    std::cout << BWAPI::Broodwar->enemy()->getStartLocation() << std::endl;
-
-    std::cout << BWAPI::Broodwar->enemy()->allUnitCount() << std::endl;
 
     BWAPI::Unit builder = Tools::GetTrainerUnitNotFullOfType(BWAPI::UnitTypes::Protoss_Zealot);
     if (builder)
     {
-        if (!Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Templar_Archives, BWAPI::Broodwar->self()->getUnits()))
+        if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Zealot, BWAPI::Broodwar->self()->getUnits()) <= 30)
         {
-            if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Zealot, BWAPI::Broodwar->self()->getUnits()) <= 10)
-            {
-                builder->train(BWAPI::UnitTypes::Protoss_Zealot);
-            }
-            if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Dragoon, BWAPI::Broodwar->self()->getUnits()) <= 10)
-            {
-                builder->train(BWAPI::UnitTypes::Protoss_Dragoon);
-            }
+            builder->train(BWAPI::UnitTypes::Protoss_Zealot);
         }
-        else if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Dark_Templar, BWAPI::Broodwar->self()->getUnits()) < 10)
+        if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Dragoon, BWAPI::Broodwar->self()->getUnits()) <= 30)
+        {
+            builder->train(BWAPI::UnitTypes::Protoss_Dragoon);
+        }
+ 
+        if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Templar_Archives, BWAPI::Broodwar->self()->getUnits()) && Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Dark_Templar, BWAPI::Broodwar->self()->getUnits()) < 20)
         {
             builder->train(BWAPI::UnitTypes::Protoss_Dark_Templar);
         }
@@ -685,7 +691,7 @@ void StarterBot::onUnitCreate(BWAPI::Unit unit)
 
         if (unit->getType().isBuilding() && unit->getType() != BWAPI::UnitTypes::Protoss_Pylon)
         {
-            m_strategyManager.getBuildingStrategyManager().isBuildingBuiltNeeded() = false;;
+            //m_strategyManager.getBuildingStrategyManager().isBuildingBuiltNeeded() = false;
         }
     }
 
@@ -742,7 +748,7 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
 
     else if (unit->getType() == BWAPI::UnitTypes::Protoss_Zealot || unit->getType() == BWAPI::UnitTypes::Protoss_Dragoon || unit->getType() == BWAPI::UnitTypes::Protoss_Dark_Templar)
     {
-        if (defenders.size() < 10) 
+        if (defenders.size() < 2) 
         {
             defenders.emplace(unit);
         }
@@ -763,7 +769,7 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
     }
     else
     {
-        workers.emplace(unit);
+        workers.push_back(unit);
     }
    
 }
@@ -772,12 +778,7 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
 // This is usually triggered when units appear from fog of war and become visible
 void StarterBot::onUnitShow(BWAPI::Unit unit)
 { 
-    //std::cout << unit->getType().getName();
-}
-
-void StarterBot::onUnitDiscover(BWAPI::Unit unit)
-{
-    if (unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()) && unit->getType() == BWAPI::UnitTypes::Zerg_Zergling && unit->getDistance(BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation())) < 1000 && defenders.size() < 2)
+    if (unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()) && unit->getType() == BWAPI::UnitTypes::Zerg_Zergling && unit->getDistance(BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation())) < 1000 && defenders.size() < 5)
     {
         isZerglingRush = true;
     }
@@ -785,9 +786,9 @@ void StarterBot::onUnitDiscover(BWAPI::Unit unit)
     {
         if (unit->getDistance(zealots.getPosition()) < 1000)
         {
-            for (auto u: zealots)
+            for (auto u : zealots)
             {
-                if (u && (u->getLastCommand().getType() != BWAPI::UnitCommandTypes::Attack_Unit) || ( u->getLastCommand().getTarget() && u->getLastCommand().getTarget()->getID() != unit->getID()))
+                if (u && (u->getLastCommand().getType() != BWAPI::UnitCommandTypes::Attack_Unit) || (u->getLastCommand().getTarget() && u->getLastCommand().getTarget()->getID() != unit->getID()))
                 {
                     std::cout << "base attackers in action " << std::endl;
                     u->attack(unit);
@@ -805,6 +806,11 @@ void StarterBot::onUnitDiscover(BWAPI::Unit unit)
             }
         }
     }
+}
+
+void StarterBot::onUnitDiscover(BWAPI::Unit unit)
+{
+
 
 }
 

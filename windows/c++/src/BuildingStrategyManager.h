@@ -1,6 +1,8 @@
 #pragma once
 #include "map"
 #include "BWAPI.h"
+#include "Grid.hpp"
+
 class BuildingStrategyManager
 {
 	std::map<int,BWAPI::TilePosition> m_lastBuiltLocationMap;
@@ -23,5 +25,6 @@ public:
 	int& getWorkerID();
 	bool& isAdditionalSupplyNeeded();
 	bool& isBuildingBuiltNeeded();
+	BWAPI::TilePosition getCannonBuildingLocation(int base, Grid<int>& walkable, Grid<int>& buildable);
 };
 
