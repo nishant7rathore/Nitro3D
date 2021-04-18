@@ -25,15 +25,36 @@ std::map<int, Base> BaseManager::getBasesMap()
 
 void BaseManager::addOrUpdateBase(BWAPI::Unit base, bool isDefault)
 {
-	if (isDefault && m_basesMap.size())
+	if (isDefault)
 	{
-		m_basesMap[m_basesMap.size() - 1].m_base = base;
+		m_basesMap[0] = Base(base);
+		m_basesMap[0].m_buildings.push_back(base->getID());
 	}
 	else
 	{
 		m_basesMap[m_basesMap.size()] = Base(base);
+		m_basesMap[m_basesMap.size()].m_buildings.push_back(base->getID());
 	}
 
+}
+
+
+void BaseManager::checkForInvalidMemory()
+{
+	std::vector<size_t> invalidIndices;
+
+	for (size_t i = 0; i < m_basesMap.size(); i++)
+	{
+		if (m_basesMap[i].m_buildings.size() == 0 && m_basesMap[i].m_workers.size() == 0)
+		{
+			invalidIndices.push_back(i);
+		}
+	}
+
+	for (size_t i = 0; i < invalidIndices.size(); i++)
+	{
+		m_basesMap.erase(invalidIndices[i]);
+	}
 }
 
 void BaseManager::addUnitToBase(BWAPI::Unit unit, int base)
@@ -44,11 +65,7 @@ void BaseManager::addUnitToBase(BWAPI::Unit unit, int base)
 		return;
 	}
 
-	if (m_basesMap.size() == 0)
-	{
-		m_basesMap[m_basesMap.size()] = Base();
-	}
-
+	checkForInvalidMemory();
 
 	if (unit->getType().isBuilding())
 	{

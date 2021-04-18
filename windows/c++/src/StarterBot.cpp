@@ -643,11 +643,8 @@ void StarterBot::onUnitCreate(BWAPI::Unit unit)
 
     if (unit->getType() == BWAPI::UnitTypes::Protoss_Nexus)
     {
-        int& ID = m_strategyManager.getBuildingStrategyManager().getWorkerID();
-        ID = -1;
         m_strategyManager.getBuildingStrategyManager().getLastBuiltLocation(numUnits - 1) = unit->getTilePosition();
         m_strategyManager.getBaseManager().addOrUpdateBase(unit, numUnits == 1);
-        m_strategyManager.getBaseManager().addUnitToBase(unit, numUnits - 1);
     }
     else
     {
@@ -672,6 +669,12 @@ void StarterBot::onUnitCreate(BWAPI::Unit unit)
     {
         m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded() = false;
     }
+
+    if (m_strategyManager.getBaseManager().getBuildingsCount(1,BWAPI::UnitTypes::Protoss_Nexus) && m_strategyManager.getBaseManager().getBuildingsCount(1, BWAPI::UnitTypes::Protoss_Photon_Cannon) > 2)
+    {
+        int& ID = m_strategyManager.getBuildingStrategyManager().getWorkerID();
+        ID = -1;
+    }
 }
 
 // Called whenever a unit finished construction, with a pointer to the unit
@@ -683,8 +686,10 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
         return;
     }
 
+
     int& numCompletedUnits = m_strategyManager.getNumberOfCompletedUnits(unit->getType());
     numCompletedUnits++;
+
 
     if (unit->getType() == BWAPI::UnitTypes::Protoss_Nexus && numCompletedUnits > 1)
     {

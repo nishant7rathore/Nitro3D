@@ -21,6 +21,7 @@ public:
 		Base& getBase(int base);
 		std::map<int, Base> getBasesMap();
 		void BaseManager::addOrUpdateBase(BWAPI::Unit base, bool isDefault);
+		void checkForInvalidMemory();
 		void addUnitToBase(BWAPI::Unit unit, int base);
 		void addUnitToBase(BWAPI::Unit newUnit, BWAPI::Unit buildUnit);
 		void removeUnitFromBase(BWAPI::Unit destroyedUnit);
