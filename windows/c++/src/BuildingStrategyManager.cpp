@@ -1,5 +1,6 @@
 #include "BuildingStrategyManager.h"
 #include "MapTools.h"
+#include <time.h>
 
 
 // Sample Lehmer LCG PRNG Function (from slides)
@@ -44,7 +45,7 @@ BuildingStrategyManager::BuildingStrategyManager()
     //this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Photon_Cannon, 3);
     //this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Assimilator, 2);
 
-
+    srand(time(NULL));
 }
 
 //BFS Node
@@ -108,7 +109,7 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
             
         closedList.emplace(std::to_string(node.x) + std::to_string(node.y), true);
 
-        int seed = 8;
+        int seed = rand();
 
         for (size_t d = 0; d < 8; d++)
         {
@@ -125,7 +126,7 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
             {
                 bool isSafe = isSafeToPlaceHere(building,childPos);
   
-                if (isSafe || building.isRefinery() || building == BWAPI::UnitTypes::Protoss_Pylon)
+                if (isSafe || building.isRefinery())
                 {
                     lastBuiltLocation.x = childPos.x;
                     lastBuiltLocation.y = childPos.y;
@@ -193,9 +194,9 @@ bool& BuildingStrategyManager::isAdditionalSupplyNeeded()
 {
     const int unusedSupply = Tools::GetTotalSupply(true) - BWAPI::Broodwar->self()->supplyUsed();
 
-    bool isOk = (unusedSupply <= 8) && m_isAdditionalSupplyNeeded;
+    bool isOk = unusedSupply <= 8;
 
-    m_isAdditionalSupplyNeeded = isOk;
+    m_isAdditionalSupplyNeeded = isOk || m_isAdditionalSupplyNeeded;
 
     return m_isAdditionalSupplyNeeded;
 }

@@ -71,7 +71,7 @@ void StarterBot::onFrame()
 
     doUpgrades();
 
-    //findAdditionalBases();
+    findAdditionalBases();
 
     // Draw unit health bars, which brood war unfortunately does not do
     Tools::DrawUnitHealthBars();
@@ -246,7 +246,10 @@ void StarterBot::trainAdditionalWorkers()
     {
         // if we have a valid depot unit and it's currently not training something, train a worker
         // there is no reason for a bot to ever use the unit queueing system, it just wastes resources
-        if (myDepot && !myDepot->isTraining()) { myDepot->train(workerType); }
+        if (myDepot && !myDepot->isTraining()) 
+        { 
+            myDepot->train(workerType); 
+        }
     }
     else
     {
@@ -302,6 +305,8 @@ BWAPI::TilePosition secondaryBasePylon = BWAPI::TilePositions::Invalid;
 void StarterBot::buildBuildings()
 {
 
+    std::cout << "My Units count: " << BWAPI::Broodwar->self()->allUnitCount() << std::endl;
+    std::cout << "Their Units count: " << BWAPI::Broodwar->enemy()->allUnitCount() << std::endl;
 
     //BWAPI::TilePosition tPos = m_strategyManager.getBuildingStrategyManager().getCannonBuildingLocation(0, m_mapTools.m_walkable, m_mapTools.m_buildable);
 
@@ -491,33 +496,6 @@ void StarterBot::buildArmy()
 
     }
 
-    //if (isUnderAttack)
-    //{
-    //    isUnderAttack = false;
-
-    //    for (auto it = zealots.begin(); it != zealots.end(); it++)
-    //    {
-    //        BWAPI::Unit unit = *it;
-    //        BWAPI::Unit enemeyUnit = zealots.getClosestUnit(BWAPI::Filter::IsAttacking);
-    //        if (enemeyUnit && enemeyUnit->getPlayer()->isEnemy(BWAPI::Broodwar->self()))
-    //        {
-    //            if(unit->getLastCommand().getUnit() != enemeyUnit) unit->attack(enemeyUnit);
-    //            isUnderAttack = true;
-    //        }
-    //        else
-    //        {
-    //            enemeyUnit = zealots.getClosestUnit(BWAPI::Filter::IsEnemy);
-    //            if (enemeyUnit)
-    //            {
-    //                if (unit->getLastCommand().getUnit() != enemeyUnit) unit->attack(enemeyUnit);
-    //                isUnderAttack = true;
-    //            }
-    //        }
-    //    }
-    //}
-
-    //else
-
 
     if (isUnderAttack)
     {
@@ -688,18 +666,22 @@ void StarterBot::onUnitCreate(BWAPI::Unit unit)
         }
         
         m_strategyManager.getBaseManager().addUnitToBase(unit, builder);
-
-        if (unit->getType().isBuilding() && unit->getType() != BWAPI::UnitTypes::Protoss_Pylon)
-        {
-            //m_strategyManager.getBuildingStrategyManager().isBuildingBuiltNeeded() = false;
-        }
     }
 
+    if (unit->getType() == BWAPI::UnitTypes::Protoss_Pylon)
+    {
+        m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded() = false;
+    }
 }
 
 // Called whenever a unit finished construction, with a pointer to the unit
 void StarterBot::onUnitComplete(BWAPI::Unit unit)
 {
+
+    if (unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()))
+    {
+        return;
+    }
 
     int& numCompletedUnits = m_strategyManager.getNumberOfCompletedUnits(unit->getType());
     numCompletedUnits++;
@@ -709,10 +691,6 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
         m_workersWanted += 5;
     }
 
-    if (unit->getType() == BWAPI::UnitTypes::Protoss_Pylon)
-    {
-        m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded() = false;
-    }
     if (unit->getType().isBuilding())
     {
         if (unit->getType().isRefinery())
