@@ -280,14 +280,14 @@ BWAPI::Unit Tools::GetDepot()
 }
 
 // Attempt tp construct a building of a given type 
-bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
+bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, int excluded)
 {
     // Get the type of unit that is required to build the desired building
     BWAPI::UnitType builderType = type.whatBuilds().first;
 
     // Get a unit that we own that is of the given type so it can build
     // If we can't find a valid builder unit, then we have to cancel the building
-    BWAPI::Unit builder = Tools::GetWorkerExcluding(bsm.getWorkerID());
+    BWAPI::Unit builder = Tools::GetWorkerExcluding(excluded);
     if (!builder) { return false; }
 
     // Get a location that we want to build the building next to

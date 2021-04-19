@@ -31,7 +31,7 @@ namespace Tools
 
 
     void DrawUnitBoundingBoxes();
-    bool BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm);
+    bool BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, int excluded=-1);
     void DrawUnitCommands();
 
     void SmartRightClick(BWAPI::Unit unit, BWAPI::Unit target);

@@ -168,6 +168,11 @@ int& BuildingStrategyManager::getWorkerID()
     return m_workerID;
 }
 
+void BuildingStrategyManager::setWorkerID(int id)
+{
+    m_workerID = id;
+}
+
 bool& BuildingStrategyManager::isAdditionalSupplyNeeded()
 {
     return m_isAdditionalSupplyNeeded;

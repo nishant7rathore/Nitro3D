@@ -13,6 +13,10 @@ class StarterBot
     MapTools m_mapTools;
 	ResourceManager m_resourceManager;
 	StrategyManager m_strategyManager;
+	BWAPI::Unit myScout;
+	BWAPI::Position enemyPos;
+	bool scoutingComplete = false;
+	bool enemyFound = false;
 
 	std::thread t1;
 	int resourceCount = 100;

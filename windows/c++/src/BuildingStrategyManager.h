@@ -21,6 +21,7 @@ public:
 	std::map<BWAPI::UnitType, int> getBuildingOrderMap();
 	std::map<BWAPI::UnitType, int> getAdditionalBaseBuildingOrderMap();
 	int& getWorkerID();
+	void setWorkerID(int id);
 	bool& isAdditionalSupplyNeeded();
 	bool& isBuildingBuiltNeeded();
 };

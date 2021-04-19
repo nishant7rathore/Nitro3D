@@ -5,7 +5,7 @@
 
 /**
 * Nishant Rathore 
-* Rohan Parmar
+* Ronak Parmar
 * 
 * We have an extension for this assignment, but after chatting with Dave, I was instructed to submit this. 
 * 
@@ -30,7 +30,7 @@ void StarterBot::onStart()
 {
     resourceCount = 100;
     // Set our BWAPI options here    
-	BWAPI::Broodwar->setLocalSpeed(10);
+	BWAPI::Broodwar->setLocalSpeed(15);
     BWAPI::Broodwar->setFrameSkip(0);
     
     // Enable the flag that tells BWAPI top let users enter input while bot plays
@@ -42,6 +42,7 @@ void StarterBot::onStart()
     // Call MapTools OnStart
     //t1 = std::thread(&MapTools::onStart,std::ref(m_mapTools),std::ref(m_resourceManager));
     m_mapTools.onStart(m_resourceManager);
+    myScout = Tools::GetUnitOfType(BWAPI::Broodwar->self()->getRace().getWorker());
 }
 
 // Called whenever the game ends and tells you if you won or not
@@ -55,10 +56,43 @@ void StarterBot::onFrame()
 {
     PROFILE_FUNCTION();
 
+
+    auto& startLocations = BWAPI::Broodwar->getStartLocations();
+    if (!enemyFound) {
+        for (BWAPI::TilePosition tp : startLocations)
+        {
+            if (!enemyFound) 
+            {
+                if (BWAPI::Broodwar->isExplored(tp)) { continue; }
+                if (BWAPI::Broodwar->self()->getStartLocation() == tp) { continue; }
+                if (!myScout->isIdle())
+                {
+                    continue;
+                }
+
+                BWAPI::Position pos(tp);
+                myScout->move(pos);
+
+                if (BWAPI::Broodwar->enemy()->getUnits().size() > 0)
+                {
+                    enemyPos = pos;
+                    enemyFound = true;
+                    std::cout << "(" << enemyPos.x << ", " << enemyPos.y << ")" << std::endl;
+                    scoutingComplete = true;
+                    myScout->move(BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
+                }
+            }
+        }
+    }
+
+    
+
+    
+
     // Update our MapTools information
     m_mapTools.onFrame();
 
-    // Send our idle workers to mine minerals so they don't just stand there
+    //Send our idle workers to mine minerals so they don't just stand there
     sendIdleWorkersToMinerals();
 
     // Build more supply if we are going to run out soon
@@ -274,7 +308,7 @@ void StarterBot::buildAdditionalSupply()
     // Otherwise, we are going to build a supply provider
     const BWAPI::UnitType supplyProviderType = BWAPI::Broodwar->self()->getRace().getSupplyProvider();
 
-    bool startedBuilding = Tools::BuildBuilding(supplyProviderType, m_strategyManager.getBuildingStrategyManager());
+    bool startedBuilding = Tools::BuildBuilding(supplyProviderType, m_strategyManager.getBuildingStrategyManager(),myScout->getID());
     if (startedBuilding)
     {
         BWAPI::Broodwar->printf("Started Building %s", supplyProviderType.getName().c_str());
@@ -333,8 +367,13 @@ void StarterBot::buildBuildings()
             {
                 continue;
             }
+            
+            /*while (!scoutingComplete) {
+                m_strategyManager.getBuildingStrategyManager().setWorkerID(myScout->getID());
+            }*/
+       
 
-            built = Tools::BuildBuilding(it->first, m_strategyManager.getBuildingStrategyManager());
+            built = Tools::BuildBuilding(it->first, m_strategyManager.getBuildingStrategyManager(),myScout->getID());
         
 
             if (built)
@@ -450,9 +489,9 @@ void StarterBot::buildArmy()
     if (m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded()) return;
     if (m_strategyManager.getBuildingStrategyManager().getWorkerID() != -1) return;
 
-    std::cout << BWAPI::Broodwar->enemy()->getStartLocation() << std::endl;
+    //std::cout << BWAPI::Broodwar->enemy()->getStartLocation() << std::endl;
 
-    std::cout << BWAPI::Broodwar->enemy()->allUnitCount() << std::endl;
+    //std::cout << BWAPI::Broodwar->enemy()->allUnitCount() << std::endl;
 
     BWAPI::Unit builder = Tools::GetTrainerUnitNotFullOfType(BWAPI::UnitTypes::Protoss_Zealot);
     if (builder)
