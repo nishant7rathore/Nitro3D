@@ -128,7 +128,7 @@ bool Tools::isMineralInOurList(BWAPI::Unit mineral, std::vector<Resource>& resou
         }
 
         //check if any of the units in the range are in the list
-        for (auto unit : mineral->getUnitsInRadius(512, BWAPI::Filter::IsNeutral))
+        for (auto unit : mineral->getUnitsInRadius(128, BWAPI::Filter::IsNeutral))
         {
             if (unit->getID() == it->m_id && unit->getType() == BWAPI::UnitTypes::Resource_Vespene_Geyser)
             {
@@ -169,6 +169,18 @@ int Tools::CountUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units)
     }
 
     return sum;
+}
+
+int Tools::CountBaseUnitssWithFilter(int base, BWAPI::UnitFilter filter, BaseManager& bm)
+{
+    BWAPI::Unit baseUnit = bm.getBasesMap()[base].m_base;
+
+    if (!baseUnit || !baseUnit->exists()) return 0;
+
+    BWAPI::Unitset units = BWAPI::Broodwar->getUnitsInRadius(baseUnit->getPosition(),512,filter);
+    size_t size = units.size();
+
+    return size;
 }
 
 int Tools::CountBuildingUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units)
@@ -241,6 +253,12 @@ BWAPI::Unit Tools::GetTrainerUnitNotFullOfType(BWAPI::UnitType type)
     for (auto& unit : BWAPI::Broodwar->self()->getUnits())
     {
         // if the unit is of the correct type, and has a room to train this unit type, return it
+        if (unit->getType() == type.whatBuilds().first && !unit->isTraining())
+        {
+            return unit;
+        }
+
+        // if the unit is of the correct type, and has a room to train this unit type, return it
         if (unit->getType() == type.whatBuilds().first && unit->getTrainingQueue().size() < 5)
         {
             return unit;
@@ -305,9 +323,9 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, in
     {
         if (BWAPI::Broodwar->self()->minerals() >= BWAPI::UnitTypes::Protoss_Pylon.mineralPrice())
         {
-            pos = BWAPI::Broodwar->getBuildLocation(type, desiredPos, maxBuildRange, buildingOnCreep);
+            pos = bsm.getBuildingLocation(type, builder, 0);
             lastSetPylonTilePosition = pos;
-            hasBuilt = bsm.isSafeToPlaceHere(type, lastSetPylonTilePosition) && builder->build(type, lastSetPylonTilePosition);
+            hasBuilt = builder->build(type, lastSetPylonTilePosition);
             /*if (lastSetPylonTilePosition == BWAPI::TilePositions::Invalid || BWAPI::Broodwar->getUnitsOnTile(lastSetPylonTilePosition).size() > 0)
             {
                

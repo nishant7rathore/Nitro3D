@@ -1,19 +1,38 @@
 #include "BuildingStrategyManager.h"
-#include "Tools.h"
+#include "MapTools.h"
+#include <time.h>
+
+
+// Sample Lehmer LCG PRNG Function (from slides)
+// @author: David Churchill
+inline uint32_t LehmerPRNG(uint32_t seed)
+{
+    uint64_t tmp;
+    tmp = (uint64_t)seed * 0x4a39b70d;
+    uint32_t m1 = (uint32_t)((tmp >> 32) ^ tmp);
+    tmp = (uint64_t)m1 * 0x12fad5c9;
+    uint32_t m2 = (uint32_t)((tmp >> 32) ^ tmp);
+    return m2;
+}
+
+inline uint32_t Lehmer2(uint32_t x, uint32_t y)
+{
+    return LehmerPRNG(LehmerPRNG(x) ^ y);
+}
 
 BuildingStrategyManager::BuildingStrategyManager()
 {
     this->m_lastBuiltLocationMap.emplace(0, BWAPI::Broodwar->self()->getStartLocation());
 
     this->m_buildingBuidOrder.clear();
-    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Gateway, 3);
-    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Cybernetics_Core, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Gateway, 2);
     //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Nexus, 1);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Forge, 1);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Assimilator, 1);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Photon_Cannon, 5);
-    //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Citadel_of_Adun, 1);
-    //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Templar_Archives, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Cybernetics_Core, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Citadel_of_Adun, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Templar_Archives, 1);
     //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Fleet_Beacon, 1);
     //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Robotics_Facility, 1);
     //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Observatory, 1);
@@ -22,11 +41,11 @@ BuildingStrategyManager::BuildingStrategyManager()
 
     this->m_additionalBaseBuildingMap.clear();
     this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Pylon, 2);
-    this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Gateway, 1);
+    this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Gateway, 2);
     this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Photon_Cannon, 3);
     this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Assimilator, 2);
 
-
+    srand(time(NULL));
 }
 
 //BFS Node
@@ -74,11 +93,10 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
     openList.clear();
     closedList.clear();
 
+    if (base < 1 && (building == BWAPI::UnitTypes::Protoss_Pylon || building == BWAPI::UnitTypes::Protoss_Photon_Cannon)) return getCannonPosition(building);
+
     BWAPI::TilePosition& lastBuiltLocation = m_lastBuiltLocationMap[base];
-
-
     openList.push_back(BFSNode(lastBuiltLocation.x, lastBuiltLocation.y, 0, nullptr));
-
     size_t size = openList.size();
 
     for (size_t i = 0; i < size; i++)
@@ -90,11 +108,14 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
             
         closedList.emplace(std::to_string(node.x) + std::to_string(node.y), true);
 
+        int seed = rand();
+
         for (size_t d = 0; d < 8; d++)
         {
-            
-            int x = node.x + directions[d].x;
-            int y = node.y + directions[d].y;
+            size_t index = Lehmer2(seed, d) % 8;
+
+            int x = node.x + directions[index].x;
+            int y = node.y + directions[index].y;
 
             it = closedList.find(std::to_string(x) + std::to_string(y));
 
@@ -104,7 +125,7 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
             {
                 bool isSafe = isSafeToPlaceHere(building,childPos);
   
-                if (isSafe || building.isRefinery() || building == BWAPI::UnitTypes::Protoss_Pylon)
+                if (isSafe || building.isRefinery())
                 {
                     lastBuiltLocation.x = childPos.x;
                     lastBuiltLocation.y = childPos.y;
@@ -175,10 +196,110 @@ void BuildingStrategyManager::setWorkerID(int id)
 
 bool& BuildingStrategyManager::isAdditionalSupplyNeeded()
 {
+    const int unusedSupply = Tools::GetTotalSupply(true) - BWAPI::Broodwar->self()->supplyUsed();
+
+    bool isOk = unusedSupply <= 8;
+
+    m_isAdditionalSupplyNeeded = isOk || m_isAdditionalSupplyNeeded;
+
     return m_isAdditionalSupplyNeeded;
 }
 
 bool& BuildingStrategyManager::isBuildingBuiltNeeded()
 {
     return m_isBuildingBuiltNeeded;
+}
+
+
+void BuildingStrategyManager::findCannonBuildingLocation(int base, Grid<int>& walkable, Grid<int>& buildable)
+{
+    m_cannonLocations.clear();
+
+    openList.clear();
+    closedList.clear();
+
+    BWAPI::TilePosition& lastBuiltLocation = m_lastBuiltLocationMap[base];
+
+
+    openList.push_back(BFSNode(lastBuiltLocation.x, lastBuiltLocation.y, 0, nullptr));
+
+    size_t size = openList.size();
+
+    for (size_t i = 0; i < size; i++)
+    {
+        BFSNode node = openList[i];
+
+        it = closedList.find(std::to_string(node.x) + std::to_string(node.y));
+        if (it != closedList.end()) continue;
+
+        closedList.emplace(std::to_string(node.x) + std::to_string(node.y), true);
+
+        for (size_t d = 0; d < 8; d++)
+        {
+
+            int x = node.x + directions[d].x;
+            int y = node.y + directions[d].y;
+
+            it = closedList.find(std::to_string(x) + std::to_string(y));
+
+            BWAPI::TilePosition childPos = BWAPI::TilePosition(x, y);
+            if (!childPos.isValid() || it != closedList.end()) continue;
+
+            bool isBuildable = buildable.get(x, y);
+
+            bool isSafeToPlace = isSafeToPlaceHere(BWAPI::UnitTypes::Protoss_Photon_Cannon, childPos);
+
+            if (isBuildable)
+            {
+               /* bool isSafe = isSafeToPlaceHere(building, childPos);
+
+                if (isSafe || building.isRefinery() || building == BWAPI::UnitTypes::Protoss_Pylon)
+                {
+                    lastBuiltLocation.x = childPos.x;
+                    lastBuiltLocation.y = childPos.y;
+                    return lastBuiltLocation;
+                }*/
+
+                bool isNeighborNotVisible = true;
+
+                BWAPI::TilePosition newChildPos = BWAPI::TilePosition(x, y);
+
+                for (size_t d = 0; d < 8; d++)
+                {
+                    int xx = childPos.x + directions[d].x;
+                    int yy = childPos.y + directions[d].y;
+
+                    newChildPos = BWAPI::TilePosition(xx,yy);
+
+                    if (newChildPos.isValid() && !BWAPI::Broodwar->isVisible(newChildPos) && walkable.get(xx,yy))
+                    {
+                        isNeighborNotVisible = false;
+                        break;
+                    }
+                }
+                if (!isNeighborNotVisible)
+                {
+                    m_cannonLocations.push_back(childPos);
+                }
+            }
+
+            openList.push_back(BFSNode(childPos.x, childPos.y, node.position++, &node));
+            size++;
+
+        }
+
+    }
+  
+}
+
+BWAPI::TilePosition BuildingStrategyManager::getCannonPosition(BWAPI::UnitType unitType)
+{
+    for (auto& pos: m_cannonLocations)
+    {
+        if (isSafeToPlaceHere(unitType,pos))
+        {
+            return pos;
+        }
+    }
+    return BWAPI::TilePositions::Invalid;
 }

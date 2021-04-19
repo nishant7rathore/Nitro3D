@@ -1,10 +1,14 @@
 #pragma once
 #include "map"
+#include "vector"
 #include "BWAPI.h"
+#include "Grid.hpp"
+
 class BuildingStrategyManager
 {
 	std::map<int,BWAPI::TilePosition> m_lastBuiltLocationMap;
 	std::map<BWAPI::UnitType, int> m_additionalBaseBuildingMap;
+	std::vector<BWAPI::TilePosition> m_cannonLocations;
 	int m_workerID = -1;
 	bool m_isAdditionalSupplyNeeded = false;
 	bool m_isBuildingBuiltNeeded = false;
@@ -24,5 +28,7 @@ public:
 	void setWorkerID(int id);
 	bool& isAdditionalSupplyNeeded();
 	bool& isBuildingBuiltNeeded();
+	void findCannonBuildingLocation(int base, Grid<int>& walkable, Grid<int>& buildable);
+	BWAPI::TilePosition getCannonPosition(BWAPI::UnitType unitType);
 };
 

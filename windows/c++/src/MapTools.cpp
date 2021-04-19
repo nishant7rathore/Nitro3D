@@ -160,7 +160,6 @@ bool MapTools::isBuildable(const BWAPI::TilePosition & tile) const
     return isBuildable(tile.x, tile.y);
 }
 
-
 void MapTools::printMap() const
 {
     std::stringstream ss;

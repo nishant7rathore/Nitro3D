@@ -23,17 +23,40 @@ std::map<int, Base> BaseManager::getBasesMap()
 	return m_basesMap;
 }
 
-void BaseManager::addOrUpdateBase(BWAPI::Unit base, bool isDefault)
+void BaseManager::addOrUpdateBase(BWAPI::Unit base, int baseIndex)
 {
-	if (isDefault && m_basesMap.size())
+	checkForInvalidMemory();
+
+	if (baseIndex == 1)
 	{
-		m_basesMap[m_basesMap.size() - 1].m_base = base;
+		m_basesMap[0] = Base(base);
+		m_basesMap[0].m_buildings.push_back(base->getID());
 	}
 	else
 	{
-		m_basesMap[m_basesMap.size()] = Base(base);
+		m_basesMap[baseIndex - 1] = Base(base);
+		m_basesMap[baseIndex - 1].m_buildings.push_back(base->getID());
 	}
 
+}
+
+
+void BaseManager::checkForInvalidMemory()
+{
+	std::vector<size_t> invalidIndices;
+
+	for (size_t i = 0; i < m_basesMap.size(); i++)
+	{
+		if (m_basesMap[i].m_buildings.size() == 0 && m_basesMap[i].m_workers.size() == 0)
+		{
+			invalidIndices.push_back(i);
+		}
+	}
+
+	for (size_t i = 0; i < invalidIndices.size(); i++)
+	{
+		m_basesMap.erase(invalidIndices[i]);
+	}
 }
 
 void BaseManager::addUnitToBase(BWAPI::Unit unit, int base)
@@ -44,11 +67,7 @@ void BaseManager::addUnitToBase(BWAPI::Unit unit, int base)
 		return;
 	}
 
-	if (m_basesMap.size() == 0)
-	{
-		m_basesMap[m_basesMap.size()] = Base();
-	}
-
+	checkForInvalidMemory();
 
 	if (unit->getType().isBuilding())
 	{
@@ -198,7 +217,7 @@ int BaseManager::getBaseofUnit(BWAPI::Unit unit)
 	return baseIndex;
 }
 
-const size_t BaseManager::getBuildingsCount(int base, BWAPI::UnitType unitType)
+const size_t BaseManager::getBuildingsCount(int base, BWAPI::UnitType unitType, bool isCompleted)
 {
 	const size_t count = m_basesMap[base].m_buildings.size();
 
@@ -206,7 +225,9 @@ const size_t BaseManager::getBuildingsCount(int base, BWAPI::UnitType unitType)
 
 	for (size_t i=0; i<count; i++)
 	{
-		if (BWAPI::Broodwar->getUnit(m_basesMap[base].m_buildings[i])->getType() == unitType)
+		BWAPI::Unit unit = BWAPI::Broodwar->getUnit(m_basesMap[base].m_buildings[i]);
+		if (isCompleted && !unit->isCompleted()) continue;
+		if (unit->getType() == unitType)
 		{
 			sum++;
 		}

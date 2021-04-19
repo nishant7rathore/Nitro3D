@@ -20,13 +20,14 @@ public:
 		BaseManager();
 		Base& getBase(int base);
 		std::map<int, Base> getBasesMap();
-		void BaseManager::addOrUpdateBase(BWAPI::Unit base, bool isDefault);
+		void addOrUpdateBase(BWAPI::Unit base, int baseIndex);
+		void checkForInvalidMemory();
 		void addUnitToBase(BWAPI::Unit unit, int base);
 		void addUnitToBase(BWAPI::Unit newUnit, BWAPI::Unit buildUnit);
 		void removeUnitFromBase(BWAPI::Unit destroyedUnit);
 		BWAPI::Unit getWorkerFromBase(int base);
-		int BaseManager::getBaseofUnit(BWAPI::Unit unit);
-		const size_t getBuildingsCount(int base, BWAPI::UnitType unitType);
+		int getBaseofUnit(BWAPI::Unit unit);
+		const size_t getBuildingsCount(int base, BWAPI::UnitType unitType, bool isCompleted);
 		const size_t getNonBuildingsCount(int base, BWAPI::UnitType unitType);
 		BWAPI::Unit getUnitOfTypeFromBase(int base, BWAPI::UnitType unitType);
 };

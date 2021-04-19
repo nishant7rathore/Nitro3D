@@ -18,6 +18,9 @@ namespace Tools
     Resource GetClosestGeyserToUnit(BWAPI::Position p);
 
     int CountUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units);
+    int CountUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units);
+
+    int CountBaseUnitssWithFilter(int base, BWAPI::UnitFilter filter, BaseManager& bm);
 
     int CountBuildingUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units);
 
