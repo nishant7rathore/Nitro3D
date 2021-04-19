@@ -80,7 +80,7 @@ void StarterBot::onFrame()
     drawDebugInformation();
 }
 
-BWAPI::TilePosition baseLocationTilePos;
+BWAPI::TilePosition baseLocationTilePos = BWAPI::TilePositions::Invalid;
 BWAPI::TilePosition nexusTilePos;
 
 void StarterBot::findAdditionalBases()
@@ -196,7 +196,7 @@ void StarterBot::sendIdleWorkersToMinerals()
         {
             //int numAssimilitorUnits = BWAPI::Broodwar->getUnitsOnTile(m_resourceManager.getRefineryResource(unit->getTilePosition().x, unit->getTilePosition().y).m_x, m_resourceManager.getRefineryResource(unit->getTilePosition().x, unit->getTilePosition().y).m_y).size();
 
-            if (m_strategyManager.getBaseManager().getBaseofUnit(unit) > 0 && m_strategyManager.getBaseManager().getBuildingsCount(1,BWAPI::UnitTypes::Protoss_Nexus) > 0)
+            if (m_strategyManager.getBaseManager().getBaseofUnit(unit) > 0 && m_strategyManager.getBaseManager().getBuildingsCount(1,BWAPI::UnitTypes::Protoss_Nexus,true) > 0)
             {
                 if (closestMineral)
                 {
@@ -364,8 +364,9 @@ void StarterBot::buildBuildings()
         }
     }
 
+    m_strategyManager.getBaseManager().checkForInvalidMemory();
 
-    if (!built && m_strategyManager.getBuildingStrategyManager().getWorkerID() != -1 && BWAPI::Broodwar->getUnit(m_strategyManager.getBuildingStrategyManager().getWorkerID())->exists())
+    if (!built && m_strategyManager.getBaseManager().getBasesMap().size() < 2 && m_strategyManager.getBaseManager().getBuildingsCount(1,BWAPI::UnitTypes::Protoss_Nexus,false) < 1 && baseLocationTilePos.isValid())
     {
         if (Tools::checkIfBuildCommandAlreadyIssued(BWAPI::UnitTypes::Protoss_Nexus))
         {
@@ -408,7 +409,7 @@ void StarterBot::buildBuildings()
 
             int gasPrice = it->first.gasPrice();
 
-            int numUnits = m_strategyManager.getBaseManager().getBuildingsCount(num,it->first);
+            int numUnits = m_strategyManager.getBaseManager().getBuildingsCount(num,it->first,false);
 
 
             if (it->first == BWAPI::UnitTypes::Protoss_Assimilator)
@@ -420,7 +421,7 @@ void StarterBot::buildBuildings()
             if (BWAPI::Broodwar->self()->isUnitAvailable(it->first) && numUnits < m_strategyManager.getBuildingStrategyManager().getSecondaryBaseNumberOfBuildings(it->first) && mineralsLeft >= mineralPrice && gasLeft >= gasPrice)
             {
 
-                if (it->first != BWAPI::UnitTypes::Protoss_Pylon  && m_strategyManager.getBaseManager().getBuildingsCount(num, BWAPI::UnitTypes::Protoss_Pylon) < 2)
+                if (it->first != BWAPI::UnitTypes::Protoss_Pylon  && m_strategyManager.getBaseManager().getBuildingsCount(num, BWAPI::UnitTypes::Protoss_Pylon, true) < 2)
                 {
                     continue;
                 }
@@ -644,7 +645,7 @@ void StarterBot::onUnitCreate(BWAPI::Unit unit)
     if (unit->getType() == BWAPI::UnitTypes::Protoss_Nexus)
     {
         m_strategyManager.getBuildingStrategyManager().getLastBuiltLocation(numUnits - 1) = unit->getTilePosition();
-        m_strategyManager.getBaseManager().addOrUpdateBase(unit, numUnits == 1);
+        m_strategyManager.getBaseManager().addOrUpdateBase(unit, numUnits);
     }
     else
     {
@@ -670,7 +671,7 @@ void StarterBot::onUnitCreate(BWAPI::Unit unit)
         m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded() = false;
     }
 
-    if (m_strategyManager.getBaseManager().getBuildingsCount(1,BWAPI::UnitTypes::Protoss_Nexus) && m_strategyManager.getBaseManager().getBuildingsCount(1, BWAPI::UnitTypes::Protoss_Photon_Cannon) > 2)
+    if (m_strategyManager.getBaseManager().getBuildingsCount(1,BWAPI::UnitTypes::Protoss_Nexus,true) && m_strategyManager.getBaseManager().getBuildingsCount(1, BWAPI::UnitTypes::Protoss_Photon_Cannon,true) > 2)
     {
         int& ID = m_strategyManager.getBuildingStrategyManager().getWorkerID();
         ID = -1;

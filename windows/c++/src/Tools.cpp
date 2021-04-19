@@ -175,7 +175,7 @@ int Tools::CountBaseUnitssWithFilter(int base, BWAPI::UnitFilter filter, BaseMan
 {
     BWAPI::Unit baseUnit = bm.getBasesMap()[base].m_base;
 
-    if (!baseUnit || baseUnit->exists()) return 0;
+    if (!baseUnit || !baseUnit->exists()) return 0;
 
     BWAPI::Unitset units = BWAPI::Broodwar->getUnitsInRadius(baseUnit->getPosition(),512,filter);
     size_t size = units.size();

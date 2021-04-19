@@ -94,10 +94,7 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
     closedList.clear();
 
     BWAPI::TilePosition& lastBuiltLocation = m_lastBuiltLocationMap[base];
-
-
     openList.push_back(BFSNode(lastBuiltLocation.x, lastBuiltLocation.y, 0, nullptr));
-
     size_t size = openList.size();
 
     for (size_t i = 0; i < size; i++)
