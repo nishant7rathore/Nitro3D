@@ -226,7 +226,7 @@ const size_t BaseManager::getBuildingsCount(int base, BWAPI::UnitType unitType, 
 	for (size_t i=0; i<count; i++)
 	{
 		BWAPI::Unit unit = BWAPI::Broodwar->getUnit(m_basesMap[base].m_buildings[i]);
-		if (isCompleted && unit->isCompleted()) continue;
+		if (isCompleted && !unit->isCompleted()) continue;
 		if (unit->getType() == unitType)
 		{
 			sum++;

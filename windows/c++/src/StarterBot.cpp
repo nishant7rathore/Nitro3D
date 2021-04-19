@@ -40,6 +40,7 @@ void StarterBot::onStart()
     // Call MapTools OnStart
     //t1 = std::thread(&MapTools::onStart,std::ref(m_mapTools),std::ref(m_resourceManager));
     m_mapTools.onStart(m_resourceManager);
+    m_strategyManager.getBuildingStrategyManager().findCannonBuildingLocation(0, m_mapTools.m_walkable, m_mapTools.m_buildable);
 }
 
 // Called whenever the game ends and tells you if you won or not
@@ -78,6 +79,7 @@ void StarterBot::onFrame()
 
     // Draw some relevent information to the screen to help us debug the bot
     drawDebugInformation();
+
 }
 
 BWAPI::TilePosition baseLocationTilePos = BWAPI::TilePositions::Invalid;
@@ -308,9 +310,6 @@ void StarterBot::buildBuildings()
     std::cout << "My Units count: " << BWAPI::Broodwar->self()->allUnitCount() << std::endl;
     std::cout << "Their Units count: " << BWAPI::Broodwar->enemy()->allUnitCount() << std::endl;
 
-    //BWAPI::TilePosition tPos = m_strategyManager.getBuildingStrategyManager().getCannonBuildingLocation(0, m_mapTools.m_walkable, m_mapTools.m_buildable);
-
-    //std::cout << tPos << std::endl;
 
     if (m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Pylon) < 1) return;
 
@@ -365,6 +364,15 @@ void StarterBot::buildBuildings()
     }
 
     m_strategyManager.getBaseManager().checkForInvalidMemory();
+
+    if (m_strategyManager.getBuildingStrategyManager().getWorkerID() > 0 && !BWAPI::Broodwar->isExplored(baseLocationTilePos))
+    {
+        if (BWAPI::Broodwar->getUnit(m_strategyManager.getBuildingStrategyManager().getWorkerID())->getLastCommand().getTargetTilePosition() != baseLocationTilePos)
+        {
+            BWAPI::Broodwar->getUnit(m_strategyManager.getBuildingStrategyManager().getWorkerID())->move(BWAPI::Position(baseLocationTilePos));
+        }
+    }
+
 
     if (!built && m_strategyManager.getBaseManager().getBasesMap().size() < 2 && m_strategyManager.getBaseManager().getBuildingsCount(1,BWAPI::UnitTypes::Protoss_Nexus,false) < 1 && baseLocationTilePos.isValid())
     {

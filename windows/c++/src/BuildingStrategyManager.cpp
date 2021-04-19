@@ -93,6 +93,8 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
     openList.clear();
     closedList.clear();
 
+    if (base < 1 && (building == BWAPI::UnitTypes::Protoss_Pylon || building == BWAPI::UnitTypes::Protoss_Photon_Cannon)) return getCannonPosition(building);
+
     BWAPI::TilePosition& lastBuiltLocation = m_lastBuiltLocationMap[base];
     openList.push_back(BFSNode(lastBuiltLocation.x, lastBuiltLocation.y, 0, nullptr));
     size_t size = openList.size();
@@ -204,8 +206,9 @@ bool& BuildingStrategyManager::isBuildingBuiltNeeded()
 }
 
 
-BWAPI::TilePosition BuildingStrategyManager::getCannonBuildingLocation(int base, Grid<int>& walkable, Grid<int>& buildable)
+void BuildingStrategyManager::findCannonBuildingLocation(int base, Grid<int>& walkable, Grid<int>& buildable)
 {
+    m_cannonLocations.clear();
 
     openList.clear();
     closedList.clear();
@@ -217,7 +220,7 @@ BWAPI::TilePosition BuildingStrategyManager::getCannonBuildingLocation(int base,
 
     size_t size = openList.size();
 
-    for (size_t i = size - 1; i > 0; i--)
+    for (size_t i = 0; i < size; i++)
     {
         BFSNode node = openList[i];
 
@@ -235,8 +238,13 @@ BWAPI::TilePosition BuildingStrategyManager::getCannonBuildingLocation(int base,
             it = closedList.find(std::to_string(x) + std::to_string(y));
 
             BWAPI::TilePosition childPos = BWAPI::TilePosition(x, y);
+            if (!childPos.isValid() || it != closedList.end()) continue;
 
-            if (childPos.isValid() && buildable.get(x,y) && it == closedList.end() && isSafeToPlaceHere(BWAPI::UnitTypes::Protoss_Photon_Cannon, childPos))
+            bool isBuildable = buildable.get(x, y);
+
+            bool isSafeToPlace = isSafeToPlaceHere(BWAPI::UnitTypes::Protoss_Photon_Cannon, childPos);
+
+            if (isBuildable)
             {
                /* bool isSafe = isSafeToPlaceHere(building, childPos);
 
@@ -266,13 +274,27 @@ BWAPI::TilePosition BuildingStrategyManager::getCannonBuildingLocation(int base,
                 }
                 if (!isNeighborNotVisible)
                 {
-                    openList.push_back(BFSNode(childPos.x, childPos.y, node.position++, &node));
-                    size++;
+                    m_cannonLocations.push_back(childPos);
                 }
             }
+
+            openList.push_back(BFSNode(childPos.x, childPos.y, node.position++, &node));
+            size++;
 
         }
 
     }
-    return BWAPI::TilePositions::None;
+  
+}
+
+BWAPI::TilePosition BuildingStrategyManager::getCannonPosition(BWAPI::UnitType unitType)
+{
+    for (auto& pos: m_cannonLocations)
+    {
+        if (isSafeToPlaceHere(unitType,pos))
+        {
+            return pos;
+        }
+    }
+    return BWAPI::TilePositions::Invalid;
 }
