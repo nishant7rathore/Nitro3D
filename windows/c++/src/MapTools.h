@@ -25,7 +25,7 @@ struct MapTools
 
     MapTools();
 
-    void onStart(ResourceManager& rm);
+    void onStart(ResourceManager& rm, BuildingStrategyManager& bm);
     void    onFrame();
     void    draw() const;
     void    toggleDraw();

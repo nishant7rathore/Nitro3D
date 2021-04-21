@@ -8,7 +8,7 @@ class BuildingStrategyManager
 {
 	std::map<int,BWAPI::TilePosition> m_lastBuiltLocationMap;
 	std::map<BWAPI::UnitType, int> m_additionalBaseBuildingMap;
-	std::vector<BWAPI::TilePosition> m_cannonLocations;
+	std::map<int, std::vector<BWAPI::TilePosition>> m_cannonLocations;
 	int m_workerID = -1;
 	bool m_isAdditionalSupplyNeeded = false;
 	bool m_isBuildingBuiltNeeded = false;
@@ -18,6 +18,7 @@ public:
 
 	std::map<BWAPI::UnitType,int> m_buildingBuidOrder;
 	BWAPI::TilePosition& getLastBuiltLocation(int base = 0);
+	BWAPI::TilePosition getBuildingLocation(BWAPI::UnitType building, BWAPI::TilePosition pos);
 	BWAPI::TilePosition getBuildingLocation(BWAPI::UnitType building, BWAPI::Unit builder, int base = 0);
 	int getNumberOfBuildings(BWAPI::UnitType building);
 	int getSecondaryBaseNumberOfBuildings(BWAPI::UnitType building);
@@ -28,6 +29,6 @@ public:
 	bool& isAdditionalSupplyNeeded();
 	bool& isBuildingBuiltNeeded();
 	void findCannonBuildingLocation(int base, Grid<int>& walkable, Grid<int>& buildable);
-	BWAPI::TilePosition getCannonPosition(BWAPI::UnitType unitType);
+	BWAPI::TilePosition getCannonPosition(int base, BWAPI::UnitType unitType);
 };
 

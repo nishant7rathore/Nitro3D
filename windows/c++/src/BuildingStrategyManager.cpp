@@ -41,11 +41,13 @@ BuildingStrategyManager::BuildingStrategyManager()
 
     this->m_additionalBaseBuildingMap.clear();
     this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Pylon, 2);
+    this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Photon_Cannon, 6);
     this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Gateway, 2);
-    this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Photon_Cannon, 3);
     this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Assimilator, 2);
 
     srand(time(NULL));
+
+    this->m_cannonLocations.clear();
 }
 
 //BFS Node
@@ -87,13 +89,30 @@ BWAPI::TilePosition& BuildingStrategyManager::getLastBuiltLocation(int base)
 }
 
 
+BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType building, BWAPI::TilePosition pos)
+{
+    BWAPI::TilePosition lastBuiltPos = m_lastBuiltLocationMap[0];
+    m_lastBuiltLocationMap[0] = pos;
+    BWAPI::TilePosition retPos = getBuildingLocation(building,nullptr,0);
+    m_lastBuiltLocationMap[0] = lastBuiltPos;
+
+    return retPos;
+}
+
 BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType building, BWAPI::Unit builder, int base)
 {
 
     openList.clear();
     closedList.clear();
 
-    if (base < 1 && (building == BWAPI::UnitTypes::Protoss_Pylon || building == BWAPI::UnitTypes::Protoss_Photon_Cannon)) return getCannonPosition(building);
+    if (building == BWAPI::UnitTypes::Protoss_Pylon || building == BWAPI::UnitTypes::Protoss_Photon_Cannon)
+    {
+        BWAPI::TilePosition tempPos = getCannonPosition(base, building);
+        if (tempPos.isValid())
+        {
+            return tempPos;
+        }
+    }
 
     BWAPI::TilePosition& lastBuiltLocation = m_lastBuiltLocationMap[base];
     openList.push_back(BFSNode(lastBuiltLocation.x, lastBuiltLocation.y, 0, nullptr));
@@ -208,16 +227,12 @@ bool& BuildingStrategyManager::isBuildingBuiltNeeded()
 
 void BuildingStrategyManager::findCannonBuildingLocation(int base, Grid<int>& walkable, Grid<int>& buildable)
 {
-    m_cannonLocations.clear();
 
     openList.clear();
     closedList.clear();
 
     BWAPI::TilePosition& lastBuiltLocation = m_lastBuiltLocationMap[base];
-
-
     openList.push_back(BFSNode(lastBuiltLocation.x, lastBuiltLocation.y, 0, nullptr));
-
     size_t size = openList.size();
 
     for (size_t i = 0; i < size; i++)
@@ -274,7 +289,11 @@ void BuildingStrategyManager::findCannonBuildingLocation(int base, Grid<int>& wa
                 }
                 if (!isNeighborNotVisible)
                 {
-                    m_cannonLocations.push_back(childPos);
+                    this->m_cannonLocations[base].push_back(childPos);
+                    if (this->m_cannonLocations[base].size() >= 100)
+                    {
+                        return;
+                    }
                 }
             }
 
@@ -287,9 +306,9 @@ void BuildingStrategyManager::findCannonBuildingLocation(int base, Grid<int>& wa
   
 }
 
-BWAPI::TilePosition BuildingStrategyManager::getCannonPosition(BWAPI::UnitType unitType)
+BWAPI::TilePosition BuildingStrategyManager::getCannonPosition(int base, BWAPI::UnitType unitType)
 {
-    for (auto& pos: m_cannonLocations)
+    for (auto& pos: m_cannonLocations[base])
     {
         if (isSafeToPlaceHere(unitType,pos))
         {

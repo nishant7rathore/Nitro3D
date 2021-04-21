@@ -12,7 +12,7 @@ namespace Tools
     BWAPI::Unit GetClosestUnitTo(BWAPI::Unit unit, const BWAPI::Unitset& units);
     Resource GetClosestResourceMineralToUnit(BWAPI::Position p);
     std::vector<Resource> GetAllMinerals(BWAPI::Position p);
-    std::vector<BWAPI::TilePosition> GetBaseLocationsList(std::vector<Resource>& allMineralsList);
+    std::vector<BWAPI::TilePosition> GetBaseLocationsList(std::vector<Resource>& allMineralsList, BuildingStrategyManager& bm);
     bool isResourceInOurList(Resource& resource, std::vector<Resource>& resourceList);
     bool isMineralInOurList(BWAPI::Unit mineral, std::vector<Resource>& resourceList);
     Resource GetClosestGeyserToUnit(BWAPI::Position p);
@@ -34,7 +34,7 @@ namespace Tools
 
 
     void DrawUnitBoundingBoxes();
-    bool BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm);
+    bool BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, int base);
     void DrawUnitCommands();
 
     void SmartRightClick(BWAPI::Unit unit, BWAPI::Unit target);

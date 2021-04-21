@@ -46,15 +46,15 @@ std::vector<Resource> Tools::GetAllMinerals(BWAPI::Position p)
 
     for (auto& unit : BWAPI::Broodwar->getStaticNeutralUnits())
     {
-        if (!unit->getType() == BWAPI::UnitTypes::Resource_Vespene_Geyser) continue;
+        if (unit->getType() != BWAPI::UnitTypes::Resource_Vespene_Geyser) continue;
 
-        if(!isMineralInOurList(unit, allMinerals)) allMinerals.push_back(Resource(unit->getID(), unit->getTilePosition().x, unit->getTilePosition().y, unit->getInitialResources(), false));
+        allMinerals.push_back(Resource(unit->getID(), unit->getTilePosition().x, unit->getTilePosition().y, unit->getInitialResources(), false));
     }
 
     return allMinerals;
 }
 
-std::vector<BWAPI::TilePosition> Tools::GetBaseLocationsList(std::vector<Resource>& allMineralsList)
+std::vector<BWAPI::TilePosition> Tools::GetBaseLocationsList(std::vector<Resource>& allMineralsList, BuildingStrategyManager& bm)
 {
     BWAPI::Unit resourceDepot = Tools::GetDepot();
 
@@ -86,7 +86,7 @@ std::vector<BWAPI::TilePosition> Tools::GetBaseLocationsList(std::vector<Resourc
 
         if (!isResourceInOurList(currentResource, resourceList))
         {
-            BWAPI::TilePosition tilePos = BWAPI::Broodwar->getBuildLocation(BWAPI::UnitTypes::Protoss_Nexus, BWAPI::TilePosition(currentResource.m_x, currentResource.m_y));
+            BWAPI::TilePosition tilePos = bm.getBuildingLocation(BWAPI::UnitTypes::Protoss_Nexus, BWAPI::TilePosition(currentResource.m_x, currentResource.m_y));
             if (tilePos.isValid())
             {
                 baseLocations.push_back(tilePos);
@@ -127,8 +127,8 @@ bool Tools::isMineralInOurList(BWAPI::Unit mineral, std::vector<Resource>& resou
             return true;
         }
 
-        //check if any of the units in the range are in the list
-        for (auto unit : mineral->getUnitsInRadius(128, BWAPI::Filter::IsNeutral))
+        //check if any of the units in the range are on the list
+        for (auto unit : mineral->getUnitsInRadius(512, BWAPI::Filter::IsNeutral))
         {
             if (unit->getID() == it->m_id && unit->getType() == BWAPI::UnitTypes::Resource_Vespene_Geyser)
             {
@@ -177,7 +177,7 @@ int Tools::CountBaseUnitssWithFilter(int base, BWAPI::UnitFilter filter, BaseMan
 
     if (!baseUnit || !baseUnit->exists()) return 0;
 
-    BWAPI::Unitset units = BWAPI::Broodwar->getUnitsInRadius(baseUnit->getPosition(),512,filter);
+    BWAPI::Unitset units = BWAPI::Broodwar->getUnitsInRadius(baseUnit->getPosition(),192,filter);
     size_t size = units.size();
 
     return size;
@@ -298,7 +298,7 @@ BWAPI::Unit Tools::GetDepot()
 }
 
 // Attempt tp construct a building of a given type 
-bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
+bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, int base)
 {
     // Get the type of unit that is required to build the desired building
     BWAPI::UnitType builderType = type.whatBuilds().first;
@@ -323,7 +323,7 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
     {
         if (BWAPI::Broodwar->self()->minerals() >= BWAPI::UnitTypes::Protoss_Pylon.mineralPrice())
         {
-            pos = bsm.getBuildingLocation(type, builder, 0);
+            pos = bsm.getBuildingLocation(type, builder, base);
             lastSetPylonTilePosition = pos;
             hasBuilt = builder->build(type, lastSetPylonTilePosition);
             /*if (lastSetPylonTilePosition == BWAPI::TilePositions::Invalid || BWAPI::Broodwar->getUnitsOnTile(lastSetPylonTilePosition).size() > 0)
@@ -337,7 +337,7 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm)
     {
         if (!bsm.isAdditionalSupplyNeeded())
         {
-            pos = bsm.getBuildingLocation(type, builder,0);
+            pos = bsm.getBuildingLocation(type, builder,base);
             hasBuilt = builder->build(type, pos);
         }
 
