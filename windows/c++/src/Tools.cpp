@@ -419,19 +419,6 @@ int Tools::GetTotalSupply(bool inProgress)
         totalSupply += unit->getType().supplyProvided();
     }
 
-    // one last tricky case: if a unit is currently on its way to build a supply provider, add it
-    for (auto& unit : BWAPI::Broodwar->self()->getUnits())
-    {
-        // get the last command given to the unit
-        const BWAPI::UnitCommand& command = unit->getLastCommand();
-
-        // if it's not a build command we can ignore it
-        if (command.getType() != BWAPI::UnitCommandTypes::Build) { continue; }
-
-        // add the supply amount of the unit that it's trying to build
-        totalSupply += command.getUnitType().supplyProvided();
-    }
-
     return totalSupply;
 }
 

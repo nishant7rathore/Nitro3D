@@ -9,6 +9,7 @@ class BuildingStrategyManager
 	std::map<int,BWAPI::TilePosition> m_lastBuiltLocationMap;
 	std::map<BWAPI::UnitType, int> m_additionalBaseBuildingMap;
 	std::map<int, std::vector<BWAPI::TilePosition>> m_cannonLocations;
+	std::vector<BWAPI::UnitType> m_vecBuildOrder;
 	int m_workerID = -1;
 	bool m_isAdditionalSupplyNeeded = false;
 	bool m_isBuildingBuiltNeeded = false;
@@ -24,6 +25,7 @@ public:
 	int getSecondaryBaseNumberOfBuildings(BWAPI::UnitType building);
 	bool isSafeToPlaceHere(BWAPI::UnitType building, BWAPI::TilePosition childPos);
 	std::map<BWAPI::UnitType, int> getBuildingOrderMap();
+	std::vector<BWAPI::UnitType>& getBuildingOrderVector();
 	std::map<BWAPI::UnitType, int> getAdditionalBaseBuildingOrderMap();
 	int& getWorkerID();
 	bool& isAdditionalSupplyNeeded();

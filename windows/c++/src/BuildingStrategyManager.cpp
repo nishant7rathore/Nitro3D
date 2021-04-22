@@ -22,17 +22,40 @@ inline uint32_t Lehmer2(uint32_t x, uint32_t y)
 
 BuildingStrategyManager::BuildingStrategyManager()
 {
+
+    m_vecBuildOrder.clear();
+
+    //m_vecBuildOrder = std::vector<BWAPI::UnitType>(7, 0);
+
+    m_vecBuildOrder.push_back(BWAPI::UnitTypes::Protoss_Gateway);
+    m_vecBuildOrder.push_back(BWAPI::UnitTypes::Protoss_Forge);
+    m_vecBuildOrder.push_back(BWAPI::UnitTypes::Protoss_Photon_Cannon);
+    m_vecBuildOrder.push_back(BWAPI::UnitTypes::Protoss_Cybernetics_Core);
+    m_vecBuildOrder.push_back(BWAPI::UnitTypes::Protoss_Citadel_of_Adun);
+    m_vecBuildOrder.push_back(BWAPI::UnitTypes::Protoss_Templar_Archives);
+    //m_vecBuildOrder.push_back(BWAPI::UnitTypes::Protoss_Assimilator);
+
+    //m_vecBuildOrder[0] = BWAPI::UnitTypes::Protoss_Gateway;
+    //m_vecBuildOrder[1] = BWAPI::UnitTypes::Protoss_Forge;
+    //m_vecBuildOrder[2] = BWAPI::UnitTypes::Protoss_Photon_Cannon;
+    //m_vecBuildOrder[3] = BWAPI::UnitTypes::Protoss_Assimilator;
+    //m_vecBuildOrder[4] = BWAPI::UnitTypes::Protoss_Cybernetics_Core;
+    //m_vecBuildOrder[5] = BWAPI::UnitTypes::Protoss_Citadel_of_Adun;
+    //m_vecBuildOrder[6] = BWAPI::UnitTypes::Protoss_Templar_Archives;
+
+    //m_vecBuildOrder = {BWAPI::UnitTypes::Protoss_Gateway, BWAPI::UnitTypes::Protoss_Forge , BWAPI::UnitTypes::Protoss_Photon_Cannon, BWAPI::UnitTypes::Protoss_Cybernetics_Core,BWAPI::UnitTypes::Protoss_Citadel_of_Adun,BWAPI::UnitTypes::Protoss_Templar_Archives,BWAPI::UnitTypes::Protoss_Assimilator };
+
     this->m_lastBuiltLocationMap.emplace(0, BWAPI::Broodwar->self()->getStartLocation());
 
     this->m_buildingBuidOrder.clear();
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Gateway, 2);
     //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Nexus, 1);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Forge, 1);
-    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Assimilator, 1);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Photon_Cannon, 5);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Cybernetics_Core, 1);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Citadel_of_Adun, 1);
     this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Templar_Archives, 1);
+    this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Assimilator, 1);
     //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Fleet_Beacon, 1);
     //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Robotics_Facility, 1);
     //this->m_buildingBuidOrder.emplace(BWAPI::UnitTypes::Protoss_Observatory, 1);
@@ -44,8 +67,6 @@ BuildingStrategyManager::BuildingStrategyManager()
     this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Photon_Cannon, 6);
     this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Gateway, 2);
     this->m_additionalBaseBuildingMap.emplace(BWAPI::UnitTypes::Protoss_Assimilator, 2);
-
-    srand(time(NULL));
 
     this->m_cannonLocations.clear();
 }
@@ -127,6 +148,7 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
             
         closedList.emplace(std::to_string(node.x) + std::to_string(node.y), true);
 
+        srand(time(NULL));
         int seed = rand();
 
         for (size_t d = 0; d < 8; d++)
@@ -198,6 +220,11 @@ std::map<BWAPI::UnitType, int> BuildingStrategyManager::getBuildingOrderMap()
     return m_buildingBuidOrder;
 }
 
+std::vector<BWAPI::UnitType>& BuildingStrategyManager::getBuildingOrderVector()
+{
+    return m_vecBuildOrder;
+}
+
 std::map<BWAPI::UnitType, int> BuildingStrategyManager::getAdditionalBaseBuildingOrderMap()
 {
     return m_additionalBaseBuildingMap;
@@ -212,9 +239,7 @@ bool& BuildingStrategyManager::isAdditionalSupplyNeeded()
 {
     const int unusedSupply = Tools::GetTotalSupply(true) - BWAPI::Broodwar->self()->supplyUsed();
 
-    bool isOk = unusedSupply <= 8;
-
-    m_isAdditionalSupplyNeeded = isOk || m_isAdditionalSupplyNeeded;
+    m_isAdditionalSupplyNeeded = unusedSupply <= 8;
 
     return m_isAdditionalSupplyNeeded;
 }
@@ -274,13 +299,12 @@ void BuildingStrategyManager::findCannonBuildingLocation(int base, Grid<int>& wa
 
                 BWAPI::TilePosition newChildPos = BWAPI::TilePosition(x, y);
 
-                for (size_t d = 0; d < 8; d++)
+                for (size_t dd = 0; dd < 8; dd++)
                 {
-                    int xx = childPos.x + directions[d].x;
-                    int yy = childPos.y + directions[d].y;
+                    int xx = childPos.x + directions[dd].x;
+                    int yy = childPos.y + directions[dd].y;
 
                     newChildPos = BWAPI::TilePosition(xx,yy);
-
                     if (newChildPos.isValid() && !BWAPI::Broodwar->isVisible(newChildPos) && walkable.get(xx,yy))
                     {
                         isNeighborNotVisible = false;
@@ -310,7 +334,7 @@ BWAPI::TilePosition BuildingStrategyManager::getCannonPosition(int base, BWAPI::
 {
     for (auto& pos: m_cannonLocations[base])
     {
-        if (isSafeToPlaceHere(unitType,pos))
+        if (isSafeToPlaceHere(unitType,pos) && BWAPI::Broodwar->canBuildHere(pos,unitType,nullptr,true))
         {
             return pos;
         }

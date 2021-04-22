@@ -21,7 +21,7 @@ class StarterBot
 
 	BWAPI::Unitset zealots;
 	BWAPI::Unitset defenders;
-	std::vector<BWAPI::Unit> workers;
+	BWAPI::Unitset workers;
 	BWAPI::Position unitPosition = BWAPI::Positions::Invalid;
 	BWAPI::UnitCommandType zealotsLastCommandType = BWAPI::UnitCommandTypes::None;
 	int lastEnemeyAttackingID = -1;
