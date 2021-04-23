@@ -177,8 +177,20 @@ int Tools::CountBaseUnitssWithFilter(int base, BWAPI::UnitFilter filter, BaseMan
 
     if (!baseUnit || !baseUnit->exists()) return 0;
 
-    BWAPI::Unitset units = BWAPI::Broodwar->getUnitsInRadius(baseUnit->getPosition(),192,filter);
-    size_t size = units.size();
+    BWAPI::Unitset units = BWAPI::Broodwar->getUnitsInRadius(baseUnit->getPosition(),1088,filter);
+
+    size_t size = 0;
+
+    for (auto u : units)
+    {
+        for (size_t i = 0; i < bm.getBasesMap()[base].m_workers.size(); i++)
+        {
+            if (u->getID() == bm.getBasesMap()[base].m_workers[i])
+            {
+                size++;
+            }
+        }
+    }
 
     return size;
 }

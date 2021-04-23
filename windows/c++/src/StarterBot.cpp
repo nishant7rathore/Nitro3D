@@ -195,7 +195,7 @@ void StarterBot::sendIdleWorkersToMinerals()
 
 
         // Check the unit type, if it is an idle worker, then we want to send it somewhere
-        if (unit->getType().isWorker() && unit->isIdle() && !unit->isMoving() && !unit->isAttacking() && unit->getID() != m_strategyManager.getBuildingStrategyManager().getWorkerID())
+        if (unit->getType().isWorker() && unit->isIdle() && !unit->isMoving() && !unit->isAttacking())
         {
             //int numAssimilitorUnits = BWAPI::Broodwar->getUnitsOnTile(m_resourceManager.getRefineryResource(unit->getTilePosition().x, unit->getTilePosition().y).m_x, m_resourceManager.getRefineryResource(unit->getTilePosition().x, unit->getTilePosition().y).m_y).size();
 
@@ -253,7 +253,7 @@ void StarterBot::trainAdditionalWorkers()
 
     int& numOfNexus = m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Nexus);
 
-    if (workersOwned <= m_workersWanted && !mySecondDepot)
+    if (workersOwned < m_workersWanted && !mySecondDepot)
     {
         // if we have a valid depot unit and it's currently not training something, train a worker
         // there is no reason for a bot to ever use the unit queueing system, it just wastes resources
@@ -264,7 +264,7 @@ void StarterBot::trainAdditionalWorkers()
     }
     else
     {
-        if (workersOwned <= m_workersWanted && numOfNexus > 1)
+        if (workersOwned < m_workersWanted && numOfNexus > 1)
         {
             // if we have a valid depot unit and it's currently not training something, train a worker
             // there is no reason for a bot to ever use the unit queueing system, it just wastes resources
@@ -304,7 +304,7 @@ void StarterBot::buildAdditionalSupply()
 // Draw some relevent information to the screen to help us debug the bot
 void StarterBot::drawDebugInformation()
 {
-    BWAPI::Broodwar->drawTextScreen(BWAPI::Position(10, 10), "RathoreParmar\n");
+    BWAPI::Broodwar->drawTextScreen(BWAPI::Position(10, 10), "Nitro3D\n");
     Tools::DrawUnitCommands();
     Tools::DrawUnitBoundingBoxes();
 }
@@ -571,9 +571,9 @@ void StarterBot::buildArmy()
 
         }
 
-        if (isScoutingCompleted)
+        if (!isScoutingCompleted)
         {
-            
+            isScoutingAllowed = true;
         }
 
     }

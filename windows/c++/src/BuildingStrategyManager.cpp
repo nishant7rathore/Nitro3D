@@ -1,6 +1,8 @@
 #include "BuildingStrategyManager.h"
 #include "MapTools.h"
+#include <ctime>
 #include <time.h>
+#include <chrono>
 
 
 // Sample Lehmer LCG PRNG Function (from slides)
@@ -148,7 +150,9 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
             
         closedList.emplace(std::to_string(node.x) + std::to_string(node.y), true);
 
-        srand(time(NULL));
+        std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
+        std::chrono::system_clock::duration dtn = tp.time_since_epoch();
+        srand(dtn.count());
         int seed = rand();
 
         for (size_t d = 0; d < 8; d++)
@@ -265,15 +269,22 @@ void BuildingStrategyManager::findCannonBuildingLocation(int base, Grid<int>& wa
         BFSNode node = openList[i];
 
         it = closedList.find(std::to_string(node.x) + std::to_string(node.y));
+        
         if (it != closedList.end()) continue;
 
         closedList.emplace(std::to_string(node.x) + std::to_string(node.y), true);
+   
+        std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
+        std::chrono::system_clock::duration dtn = tp.time_since_epoch();
+        srand(dtn.count());
+        int seed = rand();
 
         for (size_t d = 0; d < 8; d++)
         {
+            size_t index = Lehmer2(seed, d) % 8;
 
-            int x = node.x + directions[d].x;
-            int y = node.y + directions[d].y;
+            int x = node.x + directions[index].x;
+            int y = node.y + directions[index].y;
 
             it = closedList.find(std::to_string(x) + std::to_string(y));
 
@@ -299,10 +310,14 @@ void BuildingStrategyManager::findCannonBuildingLocation(int base, Grid<int>& wa
 
                 BWAPI::TilePosition newChildPos = BWAPI::TilePosition(x, y);
 
+                seed = rand();
+
                 for (size_t dd = 0; dd < 8; dd++)
                 {
-                    int xx = childPos.x + directions[dd].x;
-                    int yy = childPos.y + directions[dd].y;
+                    size_t ind = Lehmer2(seed, dd) % 8;
+
+                    int xx = childPos.x + directions[ind].x;
+                    int yy = childPos.y + directions[ind].y;
 
                     newChildPos = BWAPI::TilePosition(xx,yy);
                     if (newChildPos.isValid() && !BWAPI::Broodwar->isVisible(newChildPos) && walkable.get(xx,yy))
