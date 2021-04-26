@@ -7,6 +7,7 @@ struct Base
 	BWAPI::Unit m_base;
 	std::vector<int> m_workers;
 	std::vector<int> m_buildings;
+	int m_workersWanted=0;
 
 	Base() {};
 	Base(BWAPI::Unit base);

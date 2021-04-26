@@ -20,6 +20,7 @@ class StrategyManager
 public:
 
 	StrategyManager();
+	StrategyManager(Grid<int>& walkable, Grid<int>& buildable);
 
 	//virtual BWAPI::UnitCommand getNextCommand();
 	//virtual void setNextCommand();

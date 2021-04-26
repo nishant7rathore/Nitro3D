@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\AStarPathFinding.h" />
     <ClInclude Include="..\src\BaseManager.h" />
     <ClInclude Include="..\src\BuildingStrategyManager.h" />
     <ClInclude Include="..\src\Grid.hpp" />
@@ -23,6 +24,7 @@
     <ClInclude Include="Profiler.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\AStarPathFinding.cpp" />
     <ClCompile Include="..\src\BaseManager.cpp" />
     <ClCompile Include="..\src\BuildingStrategyManager.cpp" />
     <ClCompile Include="..\src\main.cpp" />

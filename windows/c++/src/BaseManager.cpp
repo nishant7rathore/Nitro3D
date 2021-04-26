@@ -141,6 +141,7 @@ void BaseManager::removeUnitFromBase(BWAPI::Unit destroyedUnit)
 					isWorker = false;
 					break;
 				}
+				count++;
 			}
 		}
 	}

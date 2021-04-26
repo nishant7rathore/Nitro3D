@@ -17,7 +17,6 @@ class StarterBot
 
 	std::thread t1;
 	int resourceCount = 100;
-	int m_workersWanted = 20;
 
 	BWAPI::Unitset zealots;
 	BWAPI::Unitset defenders;

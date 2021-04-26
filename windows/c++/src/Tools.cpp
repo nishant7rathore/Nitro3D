@@ -94,6 +94,8 @@ std::vector<BWAPI::TilePosition> Tools::GetBaseLocationsList(std::vector<Resourc
             resourceList.push_back(currentResource);
         }
     }
+    
+   if(baseLocations.size() >= 1)  baseLocations[0] = resourceDepot->getTilePosition();
 
     return baseLocations;
     
@@ -128,9 +130,9 @@ bool Tools::isMineralInOurList(BWAPI::Unit mineral, std::vector<Resource>& resou
         }
 
         //check if any of the units in the range are on the list
-        for (auto unit : mineral->getUnitsInRadius(512, BWAPI::Filter::IsNeutral))
+        for (auto unit : mineral->getUnitsInRadius(544, BWAPI::Filter::IsNeutral))
         {
-            if (unit->getID() == it->m_id && unit->getType() == BWAPI::UnitTypes::Resource_Vespene_Geyser)
+            if (unit->getID() == it->m_id && unit->getType() == BWAPI::UnitTypes::Resource_Mineral_Field)
             {
                 return true;
             }
@@ -177,18 +179,15 @@ int Tools::CountBaseUnitssWithFilter(int base, BWAPI::UnitFilter filter, BaseMan
 
     if (!baseUnit || !baseUnit->exists()) return 0;
 
-    BWAPI::Unitset units = BWAPI::Broodwar->getUnitsInRadius(baseUnit->getPosition(),1088,filter);
+    //BWAPI::Unitset units = BWAPI::Broodwar->getUnitsInRadius(baseUnit->getPosition(),1088,filter);
 
     size_t size = 0;
 
-    for (auto u : units)
+    for (size_t i = 0; i < bm.getBasesMap()[base].m_workers.size(); i++)
     {
-        for (size_t i = 0; i < bm.getBasesMap()[base].m_workers.size(); i++)
+        if (BWAPI::Broodwar->getUnit(bm.getBasesMap()[base].m_workers[i])->getType() == BWAPI::UnitTypes::Protoss_Probe)
         {
-            if (u->getID() == bm.getBasesMap()[base].m_workers[i])
-            {
-                size++;
-            }
+            size++;
         }
     }
 
@@ -225,13 +224,23 @@ BWAPI::Unit Tools::GetUnitOfType(BWAPI::UnitType type)
     return nullptr;
 }
 
-BWAPI::Unit Tools::GetWorkerExcluding(int ID)
+BWAPI::Unit Tools::GetWorkerExcluding(int ID, int base, BaseManager& bm)
 {
-    // For each unit that we own
-    for (auto& unit : BWAPI::Broodwar->self()->getUnits())
+    //// For each unit that we own
+    //for (auto& unit : BWAPI::Broodwar->self()->getUnits())
+    //{
+    //    // if the unit is of the correct type, and it actually has been constructed, return it
+    //    if (unit->getType().isWorker() && unit->isCompleted() && unit->getID() != ID)
+    //    {
+    //        return unit;
+    //    }
+    //}
+
+    for (size_t i = 0; i < bm.getBasesMap()[base].m_workers.size(); i++)
     {
-        // if the unit is of the correct type, and it actually has been constructed, return it
-        if (unit->getType().isWorker() && unit->isCompleted() && unit->getID() != ID)
+        int uID = bm.getBasesMap()[base].m_workers[i];
+        BWAPI::Unit unit = ID == uID ? nullptr : BWAPI::Broodwar->getUnit(uID);
+        if (unit && unit->exists() && unit->isCompleted() && unit->getType().isWorker())
         {
             return unit;
         }
@@ -310,14 +319,14 @@ BWAPI::Unit Tools::GetDepot()
 }
 
 // Attempt tp construct a building of a given type 
-bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, int base)
+bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, int base, BaseManager& bm)
 {
     // Get the type of unit that is required to build the desired building
     BWAPI::UnitType builderType = type.whatBuilds().first;
 
     // Get a unit that we own that is of the given type so it can build
     // If we can't find a valid builder unit, then we have to cancel the building
-    BWAPI::Unit builder = Tools::GetWorkerExcluding(bsm.getWorkerID());
+    BWAPI::Unit builder = Tools::GetWorkerExcluding(bsm.getWorkerID(),base, bm);
     if (!builder) { return false; }
 
     // Get a location that we want to build the building next to
