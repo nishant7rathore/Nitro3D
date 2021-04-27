@@ -34,6 +34,7 @@ public:
 	// helper functions to get you started with bot programming and learn the API
     void sendIdleWorkersToMinerals();
 	void doUpgrades();
+	void doScouting();
 	void findAdditionalBases();
     void trainAdditionalWorkers();
     void buildAdditionalSupply();

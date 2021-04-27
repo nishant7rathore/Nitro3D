@@ -77,8 +77,9 @@ void MapTools::onStart(ResourceManager& rm, BuildingStrategyManager& bm)
         }
     }
 
-    AStar star = AStar();
-    star.estimateCost(AStarNode(BWAPI::TilePosition(1, 0), 0, nullptr, 100, 100), AStarNode(BWAPI::TilePosition(0, 1), 0, nullptr, 100, 100));
+    //AStar star = AStar();
+    //star.estimateCost(AStarNode(BWAPI::TilePosition(1, 0), nullptr, 100, 100), AStarNode(BWAPI::TilePosition(0, 1), nullptr, 100, 100));
+    //std::cout << BWAPI::TilePosition(1, 0) << std::endl;
     
 }
 

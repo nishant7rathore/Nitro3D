@@ -21,6 +21,11 @@ StarterBot::StarterBot(ResourceManager& rm):m_strategyManager(StrategyManager(m_
 }
 
 bool isZerglingRush = false;
+BWAPI::Unit myScout;
+BWAPI::Unit possibleEnemy = NULL;
+BWAPI::Position enemyPos;
+bool scoutingComplete = false;
+bool enemyFound = false;
 
 // Called when the bot starts!
 void StarterBot::onStart()
@@ -32,6 +37,9 @@ void StarterBot::onStart()
     
     // Enable the flag that tells BWAPI top let users enter input while bot plays
     BWAPI::Broodwar->enableFlag(BWAPI::Flag::UserInput);
+
+    myScout = Tools::GetUnitOfType(BWAPI::Broodwar->self()->getRace().getWorker());
+
 
     //TODO: need to ask Dave about this flag
     //BWAPI::Broodwar->enableFlag(BWAPI::Flag::CompleteMapInformation);
@@ -59,6 +67,8 @@ void StarterBot::onFrame()
     // Send our idle workers to mine minerals so they don't just stand there
     sendIdleWorkersToMinerals();
 
+    doScouting();
+
     // Build more supply if we are going to run out soon
     buildAdditionalSupply();
 
@@ -83,6 +93,51 @@ void StarterBot::onFrame()
 
 BWAPI::TilePosition baseLocationTilePos = BWAPI::TilePositions::Invalid;
 BWAPI::TilePosition nexusTilePos;
+
+
+
+void StarterBot::doScouting()
+{
+    auto& startLocations = BWAPI::Broodwar->getStartLocations();
+    BWAPI::Broodwar->drawCircleMap(myScout->getPosition(), 128, BWAPI::Colors::Red, true);
+    if (!enemyFound) {
+        for (BWAPI::TilePosition tp : startLocations)
+        {
+            if (!enemyFound)
+            {
+                if (BWAPI::Broodwar->isExplored(tp)) { continue; }
+                if (BWAPI::Broodwar->self()->getStartLocation() == tp) { continue; }
+              /*  if (!myScout->isIdle())
+                {
+                    continue;
+                }*/
+
+                BWAPI::Position pos(tp);
+                myScout->move(pos);
+                if (myScout->getClosestUnit(BWAPI::Filter::IsEnemy, 256))
+                {
+                    possibleEnemy = myScout->getClosestUnit(BWAPI::Filter::IsEnemy, 256);
+                    
+                }
+
+                if (possibleEnemy || BWAPI::Broodwar->enemy()->getUnits().size() > 0)
+                {
+                    enemyPos = pos;
+                    enemyFound = true;
+                    std::cout << "(" << enemyPos.x << ", " << enemyPos.y << ")" << std::endl;
+                    scoutingComplete = true;
+                    if (myScout->getPosition() != BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()))
+                    {
+                        myScout->move(BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
+                    }
+                    std::cout << "FINALLY REACHED" << std::endl;
+                    myScout->stop();
+                }
+            }
+        }
+    }
+}
+
 
 void StarterBot::findAdditionalBases()
 {
@@ -128,31 +183,18 @@ void StarterBot::doUpgrades()
 {
     if (m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded()) return;
 
-    if (BWAPI::Broodwar->canUpgrade(BWAPI::UpgradeTypes::Protoss_Ground_Weapons))
+    for (auto& upgradeType : { BWAPI::UpgradeTypes::Protoss_Ground_Weapons, BWAPI::UpgradeTypes::Protoss_Ground_Armor, BWAPI::UpgradeTypes::Leg_Enhancements, BWAPI::UpgradeTypes::Singularity_Charge })
     {
-        BWAPI::Unit unit = Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Forge);
-        if (unit) unit->upgrade(BWAPI::UpgradeTypes::Protoss_Ground_Weapons);
-        return;
-    }
-    if (BWAPI::Broodwar->canUpgrade(BWAPI::UpgradeTypes::Protoss_Ground_Armor))
-    {
-        BWAPI::Unit unit = Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Forge);
-        if (unit) unit->upgrade(BWAPI::UpgradeTypes::Protoss_Ground_Armor);
-        return;
-    }
-    if (BWAPI::Broodwar->canUpgrade(BWAPI::UpgradeTypes::Leg_Enhancements))
-    {
-        BWAPI::Unit unit = Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Citadel_of_Adun);
-        if (unit) unit->upgrade(BWAPI::UpgradeTypes::Leg_Enhancements);
-        return;
-    }
-    if (BWAPI::Broodwar->canUpgrade(BWAPI::UpgradeTypes::Singularity_Charge))
-    {
-        BWAPI::Unit unit = Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Cybernetics_Core);
-        if(unit) unit->upgrade(BWAPI::UpgradeTypes::Singularity_Charge);
-        return;
+        if (BWAPI::Broodwar->canUpgrade(upgradeType))
+        {
+            BWAPI::Unit unit = Tools::GetUnitOfType(upgradeType.whatUpgrades());
+            if (unit) unit->upgrade(upgradeType);
+            return;
+        }
+     
     }
 }
+       
 
 bool isRefBuilt = false;
 BWAPI::Unit lastZergling =  nullptr;

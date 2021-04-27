@@ -167,8 +167,8 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
             
             size_t index = Lehmer2(seed, d) % 8;
 
-            int x = node.x + directions[d].x;
-            int y = node.y + directions[d].y;
+            int x = node.x + m_directions[d].x;
+            int y = node.y + m_directions[d].y;
 
             it = closedList.find(std::to_string(x) + std::to_string(y));
 
@@ -303,8 +303,8 @@ void BuildingStrategyManager::findCannonBuildingLocation(int base)
             int seed = rand();
             size_t index = Lehmer2(seed, d) % 8;
 
-            int x = node.x + directions[d].x;
-            int y = node.y + directions[d].y;
+            int x = node.x + m_directions[d].x;
+            int y = node.y + m_directions[d].y;
 
             it = closedList.find(std::to_string(x) + std::to_string(y));
 
@@ -338,8 +338,8 @@ void BuildingStrategyManager::findCannonBuildingLocation(int base)
                 {
                     size_t ind = Lehmer2(seed, dd) % 8;
 
-                    int xx = childPos.x + directions[dd].x;
-                    int yy = childPos.y + directions[dd].y;
+                    int xx = childPos.x + m_directions[dd].x;
+                    int yy = childPos.y + m_directions[dd].y;
 
                     newChildPos = BWAPI::TilePosition(xx,yy);
                     if (newChildPos.isValid() && !BWAPI::Broodwar->isVisible(newChildPos) && m_walkable.get(xx,yy))

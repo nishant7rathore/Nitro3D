@@ -42,7 +42,6 @@ class BuildingStrategyManager
 	bool m_isAdditionalSupplyNeeded = false;
 	bool m_isBuildingBuiltNeeded = false;
 	int m_DirectionIndices[8] = {0,1,2,3,4,5,6,7};
-	struct Direction directions[8] = { {1,0},{0,1},{-1,0},{0,-1},{1,-1},{-1,1},{1,1},{-1,-1} }; // legal Directions for BFS 
 
 	std::vector<BFSNode> openList; // BFS open list
 	std::map<std::string, bool> closedList; // BFS closed map
@@ -53,6 +52,8 @@ class BuildingStrategyManager
 public:
 	BuildingStrategyManager();
 	BuildingStrategyManager(Grid<int>& walkable, Grid<int>& buildable);
+
+	struct Direction m_directions[8] = { {1,0},{0,1},{-1,0},{0,-1},{1,-1},{-1,1},{1,1},{-1,-1} }; // legal Directions for BFS 
 
 	void randomizeArray(int seed);
 
