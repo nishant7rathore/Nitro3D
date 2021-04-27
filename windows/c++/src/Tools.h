@@ -12,7 +12,7 @@ namespace Tools
     BWAPI::Unit GetClosestUnitTo(BWAPI::Unit unit, const BWAPI::Unitset& units);
     Resource GetClosestResourceMineralToUnit(BWAPI::Position p);
     std::vector<Resource> GetAllMinerals(BWAPI::Position p);
-    std::vector<BWAPI::TilePosition> GetBaseLocationsList(std::vector<Resource>& allMineralsList);
+    std::vector<BWAPI::TilePosition> GetBaseLocationsList(std::vector<Resource>& allMineralsList, BuildingStrategyManager& bm);
     bool isResourceInOurList(Resource& resource, std::vector<Resource>& resourceList);
     bool isMineralInOurList(BWAPI::Unit mineral, std::vector<Resource>& resourceList);
     Resource GetClosestGeyserToUnit(BWAPI::Position p);
@@ -25,7 +25,7 @@ namespace Tools
     int CountBuildingUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units);
 
     BWAPI::Unit GetUnitOfType(BWAPI::UnitType type);
-    BWAPI::Unit GetWorkerExcluding(int ID);
+    BWAPI::Unit GetWorkerExcluding(int ID, int base, BaseManager& bm);
     BWAPI::Unit GetBuilderNotBuildingCurrentlyOfType(BWAPI::UnitType type);
     BWAPI::Unit GetTrainerUnitNotFullOfType(BWAPI::UnitType type);
     BWAPI::Unit GetIdleBuilder();
@@ -34,7 +34,7 @@ namespace Tools
 
 
     void DrawUnitBoundingBoxes();
-    bool BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, int excluded=-1);
+    bool BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, int base, BaseManager& bm);
     void DrawUnitCommands();
 
     void SmartRightClick(BWAPI::Unit unit, BWAPI::Unit target);

@@ -1,9 +1,14 @@
 #include "StrategyManager.h"
 
-StrategyManager::StrategyManager()
+StrategyManager::StrategyManager():m_buildingStrategyManager(BuildingStrategyManager())
 {
 	m_unitTypesToTotal.clear();
 
+}
+
+
+StrategyManager::StrategyManager(Grid<int>& walkable, Grid<int>& buildable):m_buildingStrategyManager(walkable, buildable)
+{
 }
 
 void StrategyManager::getBuildOrderReady()

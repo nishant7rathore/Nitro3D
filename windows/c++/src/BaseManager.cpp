@@ -62,7 +62,7 @@ void BaseManager::checkForInvalidMemory()
 void BaseManager::addUnitToBase(BWAPI::Unit unit, int base)
 {
 
-	if (unit->getType().isResourceContainer() || base < 0)
+	if ((unit->getType().isResourceContainer() && unit->getType() != BWAPI::UnitTypes::Protoss_Assimilator) || base < 0)
 	{
 		return;
 	}
@@ -141,6 +141,7 @@ void BaseManager::removeUnitFromBase(BWAPI::Unit destroyedUnit)
 					isWorker = false;
 					break;
 				}
+				count++;
 			}
 		}
 	}

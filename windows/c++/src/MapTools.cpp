@@ -1,5 +1,6 @@
 #include "MapTools.h"
 #include "ResourceManager.h"
+#include "AStarPathFinding.h"
 
 #include <iostream>
 #include <sstream>
@@ -12,10 +13,10 @@ MapTools::MapTools()
     
 }
 
-void MapTools::onStart(ResourceManager& rm)
+void MapTools::onStart(ResourceManager& rm, BuildingStrategyManager& bm)
 {
     m_allMinerals = Tools::GetAllMinerals(BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
-    m_baseLocations = Tools::GetBaseLocationsList(m_allMinerals);
+    m_baseLocations = Tools::GetBaseLocationsList(m_allMinerals,bm);
 
     m_width          = BWAPI::Broodwar->mapWidth();
     m_height         = BWAPI::Broodwar->mapHeight();
@@ -75,6 +76,11 @@ void MapTools::onStart(ResourceManager& rm)
             }
         }
     }
+
+    //AStar star = AStar();
+    //star.estimateCost(AStarNode(BWAPI::TilePosition(1, 0), nullptr, 100, 100), AStarNode(BWAPI::TilePosition(0, 1), nullptr, 100, 100));
+    //std::cout << BWAPI::TilePosition(1, 0) << std::endl;
+    
 }
 
 void MapTools::onFrame()

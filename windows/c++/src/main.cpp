@@ -85,6 +85,7 @@ void PlayGame()
             std::cout << "Disconnected\n";
             break;
         }
+
     }
 
     if (bot.getThreadHandle().joinable()) bot.getThreadHandle().detach();

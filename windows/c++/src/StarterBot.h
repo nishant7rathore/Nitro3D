@@ -22,11 +22,10 @@ class StarterBot
 
 	std::thread t1;
 	int resourceCount = 100;
-	int m_workersWanted = 20;
 
 	BWAPI::Unitset zealots;
 	BWAPI::Unitset defenders;
-	std::vector<BWAPI::Unit> workers;
+	BWAPI::Unitset workers;
 	BWAPI::Position unitPosition = BWAPI::Positions::Invalid;
 	BWAPI::UnitCommandType zealotsLastCommandType = BWAPI::UnitCommandTypes::None;
 	int lastEnemeyAttackingID = -1;
@@ -42,6 +41,7 @@ public:
 	void doScouting();
 	void storeEnemyInfo();
 	void doUpgrades();
+	void doScouting();
 	void findAdditionalBases();
     void trainAdditionalWorkers();
     void buildAdditionalSupply();
