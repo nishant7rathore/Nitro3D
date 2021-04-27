@@ -20,6 +20,7 @@
     <ClInclude Include="..\src\StrategyManager.h" />
     <ClInclude Include="..\src\Tools.h" />
     <ClInclude Include="..\src\UnitStrategyManager.h" />
+    <ClInclude Include="EnemyInfo.h" />
     <ClInclude Include="Profiler.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -32,6 +33,7 @@
     <ClCompile Include="..\src\StrategyManager.cpp" />
     <ClCompile Include="..\src\Tools.cpp" />
     <ClCompile Include="..\src\UnitStrategyManager.cpp" />
+    <ClCompile Include="EnemyInfo.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>StarterBot</ProjectName>

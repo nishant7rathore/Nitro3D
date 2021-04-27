@@ -15,6 +15,7 @@ class StarterBot
 	ResourceManager m_resourceManager;
 	StrategyManager m_strategyManager;
 	BWAPI::Unit myScout;
+	BWAPI::Unit possibleEnemy = NULL;
 	BWAPI::Position enemyPos;
 	bool scoutingComplete = false;
 	bool enemyFound = false;
@@ -38,6 +39,8 @@ public:
 
 	// helper functions to get you started with bot programming and learn the API
     void sendIdleWorkersToMinerals();
+	void doScouting();
+	void storeEnemyInfo();
 	void doUpgrades();
 	void findAdditionalBases();
     void trainAdditionalWorkers();

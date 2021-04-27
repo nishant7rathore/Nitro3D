@@ -35,7 +35,7 @@ void StarterBot::onStart()
     BWAPI::Broodwar->enableFlag(BWAPI::Flag::UserInput);
 
     //TODO: need to ask Dave about this flag
-    BWAPI::Broodwar->enableFlag(BWAPI::Flag::CompleteMapInformation);
+    //BWAPI::Broodwar->enableFlag(BWAPI::Flag::CompleteMapInformation);
 
     // Call MapTools OnStart
     //t1 = std::thread(&MapTools::onStart,std::ref(m_mapTools),std::ref(m_resourceManager));
@@ -55,41 +55,11 @@ void StarterBot::onFrame()
 {
     PROFILE_FUNCTION();
 
-
-    auto& startLocations = BWAPI::Broodwar->getStartLocations();
-    if (!enemyFound) {
-        for (BWAPI::TilePosition tp : startLocations)
-        {
-            if (!enemyFound) 
-            {
-                if (BWAPI::Broodwar->isExplored(tp)) { continue; }
-                if (BWAPI::Broodwar->self()->getStartLocation() == tp) { continue; }
-                if (!myScout->isIdle())
-                {
-                    continue;
-                }
-
-                BWAPI::Position pos(tp);
-                myScout->move(pos);
-
-                if (BWAPI::Broodwar->enemy()->getUnits().size() > 0)
-                {
-                    enemyPos = pos;
-                    enemyFound = true;
-                    std::cout << "(" << enemyPos.x << ", " << enemyPos.y << ")" << std::endl;
-                    scoutingComplete = true;
-                    myScout->move(BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
-                }
-            }
-        }
-    }
-
-    
-
-    
-
     // Update our MapTools information
     m_mapTools.onFrame();
+
+    // send one of our workers for early scouting
+    doScouting();
 
     //Send our idle workers to mine minerals so they don't just stand there
     sendIdleWorkersToMinerals();
@@ -118,6 +88,54 @@ void StarterBot::onFrame()
 
 BWAPI::TilePosition baseLocationTilePos = BWAPI::TilePositions::Invalid;
 BWAPI::TilePosition nexusTilePos;
+
+void StarterBot::doScouting()
+{
+    auto& startLocations = BWAPI::Broodwar->getStartLocations();
+    BWAPI::Broodwar->drawCircleMap(myScout->getPosition(), 128, BWAPI::Colors::Red, true);
+    if (!enemyFound) {
+        for (BWAPI::TilePosition tp : startLocations)
+        {
+            if (!enemyFound)
+            {
+                if (BWAPI::Broodwar->isExplored(tp)) { continue; }
+                if (BWAPI::Broodwar->self()->getStartLocation() == tp) { continue; }
+                if (!myScout->isIdle())
+                {
+                    continue;
+                }
+
+                BWAPI::Position pos(tp);
+                myScout->move(pos);
+                if (myScout->getClosestUnit(BWAPI::Filter::IsEnemy, 256))
+                {
+                    possibleEnemy = myScout->getClosestUnit(BWAPI::Filter::IsEnemy, 256);
+                }
+
+                if (possibleEnemy || BWAPI::Broodwar->enemy()->getUnits().size() > 0)
+                {
+                    enemyPos = pos;
+                    enemyFound = true;
+                    std::cout << "(" << enemyPos.x << ", " << enemyPos.y << ")" << std::endl;
+                    scoutingComplete = true;
+                    if (myScout->getPosition() != BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation())) 
+                    {
+                        myScout->move(BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
+                    }
+                    std::cout << "FINALLY REACHED" << std::endl;
+                    myScout->stop();
+                }
+            }
+        }
+    }
+}
+
+void StarterBot::storeEnemyInfo()
+{
+    if (enemyFound) {
+        std::cout << "Race is: " << BWAPI::Broodwar->enemy()->getRace() << std::endl;
+    }
+}
 
 void StarterBot::findAdditionalBases()
 {
@@ -341,8 +359,8 @@ BWAPI::TilePosition secondaryBasePylon = BWAPI::TilePositions::Invalid;
 void StarterBot::buildBuildings()
 {
 
-    std::cout << "My Units count: " << BWAPI::Broodwar->self()->allUnitCount() << std::endl;
-    std::cout << "Their Units count: " << BWAPI::Broodwar->enemy()->allUnitCount() << std::endl;
+    //std::cout << "My Units count: " << BWAPI::Broodwar->self()->allUnitCount() << std::endl;
+    //std::cout << "Their Units count: " << BWAPI::Broodwar->enemy()->allUnitCount() << std::endl;
 
 
     if (m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Pylon) < 1) return;
@@ -841,8 +859,7 @@ void StarterBot::onUnitShow(BWAPI::Unit unit)
 
 void StarterBot::onUnitDiscover(BWAPI::Unit unit)
 {
-
-
+    
 }
 
 // Called whenever a unit gets hidden, with a pointer to the destroyed unit
