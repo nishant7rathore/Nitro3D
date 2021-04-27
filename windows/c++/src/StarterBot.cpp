@@ -67,7 +67,7 @@ void StarterBot::onFrame()
     // Send our idle workers to mine minerals so they don't just stand there
     sendIdleWorkersToMinerals();
 
-    doScouting();
+    //doScouting();
 
     // Build more supply if we are going to run out soon
     buildAdditionalSupply();

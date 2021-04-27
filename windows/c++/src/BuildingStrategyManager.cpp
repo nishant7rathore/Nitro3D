@@ -157,10 +157,10 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
     {
         BFSNode node = openList[i];
 
-        it = closedList.find(std::to_string(node.x) + std::to_string(node.y));
+        //it = closedList.find(std::to_string(node.x) + std::to_string(node.y));
         if (closedList[std::to_string(node.x) + std::to_string(node.y)]) continue;
             
-        closedList.emplace(std::to_string(node.x) + std::to_string(node.y), true);
+        closedList[std::to_string(node.x) + std::to_string(node.y)] = true;
 
         for (size_t d = 0; d < 8; d++)
         {
@@ -170,7 +170,7 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
             int x = node.x + m_directions[d].x;
             int y = node.y + m_directions[d].y;
 
-            it = closedList.find(std::to_string(x) + std::to_string(y));
+            //it = closedList.find(std::to_string(x) + std::to_string(y));
 
             BWAPI::TilePosition childPos = BWAPI::TilePosition(x, y);
 
@@ -186,7 +186,7 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
                 }
             }
 
-            if (childPos.isValid() && closedList[std::to_string(childPos.x) + std::to_string(childPos.y)])
+            if (BWAPI::Broodwar->isExplored(childPos) && childPos.isValid() && !closedList[std::to_string(childPos.x) + std::to_string(childPos.y)])
             {
                 openList.push_back(BFSNode(x,y,node.position++,&node));
                 size++;
