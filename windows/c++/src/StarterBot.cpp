@@ -147,7 +147,11 @@ void StarterBot::findAdditionalBases()
     int& numOfNexus = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Nexus);
     int& numOfCannons = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Photon_Cannon);
 
-    if (defenders.size() < 5 || zealots.size() < 5 || numOfCannons < 4 || numOfNexus > 1) return;
+    if (defenders.size() < 5 || zealots.size() < 5 || numOfCannons < 4 || numOfNexus > 1)
+    {
+        workerID = -1;
+        return;
+    }
     
     if (workerID != -1 && BWAPI::Broodwar->getUnit(workerID)->exists())
     {
@@ -376,7 +380,7 @@ void StarterBot::buildBuildings()
     //std::cout << "Their Units count: " << BWAPI::Broodwar->enemy()->allUnitCount() << std::endl;
 
 
-    if (m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Pylon) < 1) return;
+    if (m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Pylon) < 1 || m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded()) return;
 
     
     bool built = false;
@@ -400,7 +404,10 @@ void StarterBot::buildBuildings()
 
         if (BWAPI::Broodwar->getUnit(m_strategyManager.getBuildingStrategyManager().getWorkerID()))
         {
-            built = BWAPI::Broodwar->getUnit(m_strategyManager.getBuildingStrategyManager().getWorkerID())->build(BWAPI::UnitTypes::Protoss_Nexus, baseLocationTilePos);
+            m_strategyManager.getBuildingStrategyManager().getLastBuiltLocation(1) = baseLocationTilePos;
+            BWAPI::Unit builder = BWAPI::Broodwar->getUnit(m_strategyManager.getBuildingStrategyManager().getWorkerID());
+            baseLocationTilePos = m_strategyManager.getBuildingStrategyManager().getBuildingLocation(BWAPI::UnitTypes::Protoss_Nexus, builder,1);
+            built = builder->build(BWAPI::UnitTypes::Protoss_Nexus, baseLocationTilePos);
         }
 
         if (built)
@@ -410,7 +417,6 @@ void StarterBot::buildBuildings()
             //BWAPI::Broodwar->printf("Started Building %s", BWAPI::UnitTypes::Protoss_Nexus.c_str());
             //return;
             //m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Gateway]= numUnits;
-            m_strategyManager.getBuildingStrategyManager().getLastBuiltLocation(1) = baseLocationTilePos;
         }
     }
 
@@ -738,7 +744,7 @@ void StarterBot::onUnitCreate(BWAPI::Unit unit)
     {
         m_strategyManager.getBuildingStrategyManager().getLastBuiltLocation(numUnits - 1) = unit->getTilePosition();
         m_strategyManager.getBaseManager().addOrUpdateBase(unit, numUnits);
-        m_strategyManager.getBuildingStrategyManager().findCannonBuildingLocation(numUnits - 1);
+        //m_strategyManager.getBuildingStrategyManager().findCannonBuildingLocation(numUnits - 1);
 
         int& ID = m_strategyManager.getBuildingStrategyManager().getWorkerID();
         ID = -1;
@@ -766,11 +772,6 @@ void StarterBot::onUnitCreate(BWAPI::Unit unit)
         }
         
         m_strategyManager.getBaseManager().addUnitToBase(unit, builder);
-    }
-
-    if (unit->getType() == BWAPI::UnitTypes::Protoss_Pylon)
-    {
-        m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded() = false;
     }
 
     if (m_strategyManager.getBaseManager().getBuildingsCount(1, BWAPI::UnitTypes::Protoss_Nexus, true) && m_strategyManager.getBaseManager().getBuildingsCount(1, BWAPI::UnitTypes::Protoss_Pylon, false) == 2)
@@ -803,6 +804,11 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
         return;
     }
 
+    if (unit->getType() == BWAPI::UnitTypes::Protoss_Pylon)
+    {
+        m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded() = false;
+    }
+
 
     int& numCompletedUnits = m_strategyManager.getNumberOfCompletedUnits(unit->getType());
     numCompletedUnits++;
@@ -819,8 +825,9 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
         if (unit->getType().isRefinery())
         {
             m_strategyManager.getBaseManager().checkForInvalidMemory();
-            m_strategyManager.getBaseManager().addUnitToBase(unit, m_strategyManager.getBaseManager().getBasesMap().size() - 1);
-            m_strategyManager.getBaseManager().getBase(numCompletedUnits - 1).m_workersWanted += 3;
+            //m_strategyManager.getBaseManager().addUnitToBase(unit, m_strategyManager.getBaseManager().getBasesMap().size() - 1);
+            int base = m_strategyManager.getBaseManager().getBaseofUnit(unit);
+            m_strategyManager.getBaseManager().getBase(base).m_workersWanted += 3;
         }
 
         //m_strategyManager.getBaseManager().addUnitToBase(unit,m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Nexus));

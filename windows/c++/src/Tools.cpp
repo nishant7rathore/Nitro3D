@@ -1,4 +1,5 @@
 #include "Tools.h"
+#include "AStarPathFinding.h"
 
 BWAPI::TilePosition lastSetPylonTilePosition = BWAPI::TilePositions::Invalid;
 
@@ -89,13 +90,14 @@ std::vector<BWAPI::TilePosition> Tools::GetBaseLocationsList(std::vector<Resourc
             BWAPI::TilePosition tilePos = bm.getBuildingLocation(BWAPI::UnitTypes::Protoss_Nexus, BWAPI::TilePosition(currentResource.m_x, currentResource.m_y));
             if (tilePos.isValid())
             {
-                baseLocations.push_back(tilePos);
+                baseLocations.push_back(BWAPI::TilePosition(currentResource.m_x, currentResource.m_y));
+                //baseLocations.push_back(tilePos);
             }
             resourceList.push_back(currentResource);
         }
     }
     
-   if(baseLocations.size() >= 1)  baseLocations[0] = resourceDepot->getTilePosition();
+   //if(baseLocations.size() >= 1)  baseLocations[0] = resourceDepot->getTilePosition();
 
     return baseLocations;
     

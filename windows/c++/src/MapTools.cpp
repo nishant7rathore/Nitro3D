@@ -77,10 +77,14 @@ void MapTools::onStart(ResourceManager& rm, BuildingStrategyManager& bm)
         }
     }
 
-    //AStar star = AStar();
-    //star.estimateCost(AStarNode(BWAPI::TilePosition(1, 0), nullptr, 100, 100), AStarNode(BWAPI::TilePosition(0, 1), nullptr, 100, 100));
+
     //std::cout << BWAPI::TilePosition(1, 0) << std::endl;
-    
+    AStarPathFinding star = AStarPathFinding();
+    std::cout << m_baseLocations.size();
+    for (auto& t: m_baseLocations)
+    {
+        star.startSearch(BWAPI::Broodwar->self()->getStartLocation(), t , bm, m_walkable, m_buildable);
+    }
 }
 
 void MapTools::onFrame()

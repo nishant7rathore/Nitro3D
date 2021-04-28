@@ -41,7 +41,7 @@ public:
 
     bool operator() (const AStarNode& n1, const AStarNode& n2) const
     {
-        return (n1.gCost + n1.hCost) < (n2.gCost + n2.hCost);
+        return (n1.gCost + n1.hCost) > (n2.gCost + n2.hCost);
     }
 };
 
@@ -64,6 +64,6 @@ public:
     std::map<std::string,bool> m_closedList;
     Grid<AStarNode> m_openListGrid;
     double estimateCost(AStarNode n1, AStarNode n2);
-    void startSearch(BWAPI::TilePosition& startPos, std::vector<Resource>& vespeneGeyserList, BuildingStrategyManager& bm, Grid<int>& walkable, Grid<int>& buildable);
+    void startSearch(BWAPI::TilePosition& startPos, BWAPI::TilePosition& goalPos, BuildingStrategyManager& bm, Grid<int>& walkable, Grid<int>& buildable);
 
 };
