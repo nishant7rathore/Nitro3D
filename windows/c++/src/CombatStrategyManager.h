@@ -6,7 +6,7 @@ class CombatStrategyManager
 public:
 	CombatStrategyManager();
 
-	int evaluate();
-	void performMiniMax();
-};
+	int evaluate(BWAPI::Unitset myUnits, BWAPI::Unitset enemyUnits);
+	void performMiniMax(BWAPI::Unitset myUnits, BWAPI::Unitset enemyUnits, int currDepth, int maxDepth);
+	bool isThisTerminalState(BWAPI::Unitset myUnits);
 

@@ -35,6 +35,7 @@ void StarterBot::onStart()
 	BWAPI::Broodwar->setLocalSpeed(10);
     BWAPI::Broodwar->setFrameSkip(0);
     
+
     // Enable the flag that tells BWAPI top let users enter input while bot plays
     BWAPI::Broodwar->enableFlag(BWAPI::Flag::UserInput);
 
@@ -534,34 +535,8 @@ void StarterBot::buildArmy()
     if (m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded()) return;
     if (m_strategyManager.getBuildingStrategyManager().getWorkerID() != -1) return;
 
-    BWAPI::Unit builder = Tools::GetTrainerUnitNotFullOfType(BWAPI::UnitTypes::Protoss_Zealot);
-    if (builder)
-    {
-        if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Zealot, BWAPI::Broodwar->self()->getUnits()) <= 30)
-        {
-            builder->train(BWAPI::UnitTypes::Protoss_Zealot);
-        }
-        if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Dragoon, BWAPI::Broodwar->self()->getUnits()) <= 30)
-        {
-            builder->train(BWAPI::UnitTypes::Protoss_Dragoon);
-        }
- 
-        if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Templar_Archives, BWAPI::Broodwar->self()->getUnits()) && Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Dark_Templar, BWAPI::Broodwar->self()->getUnits()) < 20)
-        {
-            builder->train(BWAPI::UnitTypes::Protoss_Dark_Templar);
-        }
-        if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Corsair, BWAPI::Broodwar->self()->getUnits()) < 5)
-        {
-            builder = Tools::GetTrainerUnitNotFullOfType(BWAPI::UnitTypes::Protoss_Corsair);
-            if (builder) builder->train(BWAPI::UnitTypes::Protoss_Corsair);
-        }
-        if (Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Robotics_Facility, BWAPI::Broodwar->self()->getUnits()) < 2)
-        {
-            builder = Tools::GetTrainerUnitNotFullOfType(BWAPI::UnitTypes::Protoss_Robotics_Facility);
-            if (builder) builder->train(BWAPI::UnitTypes::Protoss_Observer);
-        }
+    m_strategyManager.getUnitStrategyManager().trainCombatUnits(m_strategyManager.getUnitTypesCompletedMap());
 
-    }
 
     if (zealots.size() == 0) isScoutingAllowed = false;
 
@@ -753,6 +728,10 @@ void StarterBot::onUnitCreate(BWAPI::Unit unit)
         {
             m_strategyManager.getBaseManager().getBase(numUnits - 1).m_workersWanted = 20;
         }
+        else
+        {
+            defenders.move(BWAPI::Position(unit->getTilePosition()));
+        }
        
     }
     else
@@ -817,7 +796,6 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
     if (unit->getType() == BWAPI::UnitTypes::Protoss_Nexus && numCompletedUnits > 1)
     {
         m_strategyManager.getBaseManager().getBase(numCompletedUnits - 1).m_workersWanted = 10;
-        defenders.move(BWAPI::Position(m_strategyManager.getBuildingStrategyManager().getCannonPosition(1,BWAPI::UnitTypes::Protoss_Pylon)));
     }
 
     if (unit->getType().isBuilding())

@@ -1,6 +1,7 @@
 #pragma once
 #include "map"
 #include "BWAPI.h"
+
 class UnitStrategyManager
 {
 public:
@@ -10,5 +11,6 @@ public:
 
 	//BWAPI::TilePosition getUnitLocation(BWAPI::UnitType unit);
 	int getNumberOfUnits(BWAPI::UnitType unit);
+	void UnitStrategyManager::trainCombatUnits(std::map<BWAPI::UnitType, int>& completedUnits);
 };
 

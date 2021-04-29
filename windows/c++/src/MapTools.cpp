@@ -8,7 +8,7 @@
 #include <array>
 
 // constructor for MapTools
-MapTools::MapTools()
+MapTools::MapTools() noexcept
 {
     
 }
@@ -34,9 +34,9 @@ void MapTools::onStart(ResourceManager& rm, BuildingStrategyManager& bm)
             m_buildable.set(x, y, canBuild(x, y));
             m_depotBuildable.set(x, y, canBuild(x, y));
             m_walkable.set(x, y, m_buildable.get(x,y) || canWalk(x, y));
-            BWAPI::Position pos(BWAPI::TilePosition(x, y));
-            Resource closestMineral = Tools::GetClosestResourceMineralToUnit(pos);
-            Resource closestGeyeser = Tools::GetClosestGeyserToUnit(pos);
+            const BWAPI::Position pos(BWAPI::TilePosition(x, y));
+            const Resource closestMineral = Tools::GetClosestResourceMineralToUnit(pos);
+            const Resource closestGeyeser = Tools::GetClosestGeyserToUnit(pos);
             rm.setMineralResource(x, y, closestMineral);
             rm.setRefineryResource(x, y, closestGeyeser);
         }

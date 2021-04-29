@@ -23,7 +23,7 @@ struct MapTools
     bool canWalk(int tileX, int tileY) const;
     void printMap() const;
 
-    MapTools();
+    MapTools() noexcept;
 
     void onStart(ResourceManager& rm, BuildingStrategyManager& bm);
     void    onFrame();
