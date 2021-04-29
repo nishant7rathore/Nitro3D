@@ -80,10 +80,10 @@ void MapTools::onStart(ResourceManager& rm, BuildingStrategyManager& bm)
 
     //std::cout << BWAPI::TilePosition(1, 0) << std::endl;
     AStarPathFinding star = AStarPathFinding();
-    std::cout << m_baseLocations.size();
-    for (auto& t: m_baseLocations)
+    std::cout << m_allMinerals.size();
+    for (auto& t: m_allMinerals)
     {
-        star.startSearch(BWAPI::Broodwar->self()->getStartLocation(), t , bm, m_walkable, m_buildable);
+        star.startSearch(BWAPI::Broodwar->self()->getStartLocation(), BWAPI::TilePosition(t.m_x,t.m_y) , bm, m_walkable, m_buildable);
     }
 }
 

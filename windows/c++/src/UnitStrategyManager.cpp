@@ -23,13 +23,14 @@ void UnitStrategyManager::trainCombatUnits(std::map<BWAPI::UnitType,int>& comple
     BWAPI::Unit builder = nullptr;
     for (it= m_unitBuildOrder.begin(); it != m_unitBuildOrder.end(); it++)
     {
-        builder = Tools::GetTrainerUnitNotFullOfType(it->first.whatBuilds().first);
+        builder = Tools::GetTrainerUnitNotFullOfType(it->first);
 
         if (builder && BWAPI::Broodwar->canMake(it->first))
         {
             if (completedUnits[it->first] <= it->second)
             {
-                builder->train(it->first);
+                bool isSuccess = builder->train(it->first);
+                if (isSuccess) std::cout << "Training " << it->first;
             }
             
         }

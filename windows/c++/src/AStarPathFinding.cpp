@@ -6,11 +6,13 @@ double AStarPathFinding::estimateCost(AStarNode n1, AStarNode n2)
 	const size_t dy = abs(n2.tilePos.y - n1.tilePos.y);
 	const size_t hDiag = dx >= dy ? dy : dx;
 	const size_t hStraight = dx + dy;
-	double cost = 141 * hDiag + 100 * (hStraight - 2 * hDiag);
+	const double cost = 141 * hDiag + 100 * (hStraight - 2 * hDiag);
 
 	//std::cout << cost << std::endl;
 
-	return cost;
+	const double newCost = sqrt(pow(abs(n2.tilePos.x - n1.tilePos.x),2) + pow(abs(n2.tilePos.y - n1.tilePos.y), 2));
+
+	return newCost;
 }
 
 void AStarPathFinding::startSearch(BWAPI::TilePosition& startPos, BWAPI::TilePosition& goalPos, BuildingStrategyManager& bm, Grid<int>& walkable, Grid<int>& buildable)
@@ -66,7 +68,7 @@ void AStarPathFinding::startSearch(BWAPI::TilePosition& startPos, BWAPI::TilePos
 						continue;
 					}
 				}
-				double totalNodeGCost = cost + node.gCost;
+				const double totalNodeGCost = cost + node.gCost;
 				AStarNode childNode = AStarNode(nodeTile, &node, totalNodeGCost, estimatedCost);
 				estimatedCost = estimateCost(childNode, m_goalNode);
 				childNode.hCost = estimatedCost;
@@ -79,6 +81,6 @@ void AStarPathFinding::startSearch(BWAPI::TilePosition& startPos, BWAPI::TilePos
 
 	}
 
-	//std::cout << m_openList.size() << std::endl;
+	std::cout << "Exiting..." << goalPos << std::endl;
 
 }
