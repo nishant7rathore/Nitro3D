@@ -16,8 +16,8 @@ struct AStarNode
     AStarNode() 
     {
         this->tilePos = BWAPI::TilePositions::Invalid;
-        this->gCost = -1;
-        this->hCost = -1;
+        this->gCost = DBL_MAX;
+        this->hCost = DBL_MAX;
         this->parent = nullptr;
     };
 
@@ -50,7 +50,7 @@ class AStarPathFinding
     AStarNode m_startNode;
     AStarNode m_goalNode;
 
-    int m_actionCost[8] = {100,100,100,100,141,141,141,141};
+    int m_actionCost[8] = {32,32,32,32,32,32,32,32};
 
 public:
 
@@ -64,6 +64,6 @@ public:
     std::map<std::string,bool> m_closedList;
     Grid<AStarNode> m_openListGrid;
     double estimateCost(AStarNode n1, AStarNode n2);
-    void startSearch(BWAPI::TilePosition& startPos, BWAPI::TilePosition& goalPos, BuildingStrategyManager& bm, Grid<int>& walkable, Grid<int>& buildable);
+    int startSearch(BWAPI::TilePosition& startPos, BWAPI::TilePosition& goalPos, BuildingStrategyManager& bm, Grid<int>& walkable, Grid<int>& buildable);
 
 };

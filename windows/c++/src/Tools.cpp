@@ -175,6 +175,21 @@ int Tools::CountUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units)
     return sum;
 }
 
+int Tools::CountUnitsOfType(BWAPI::UnitType type, bool isUnderConstruction)
+{
+    const BWAPI::Unitset& units = BWAPI::Broodwar->self()->getUnits();
+    int sum = 0;
+    for (auto& unit : units)
+    {
+        if (unit->getType() == type && (!unit->isCompleted() && isUnderConstruction))
+        {
+            sum++;
+        }
+    }
+
+    return sum;
+}
+
 int Tools::CountBaseUnitssWithFilter(int base, BWAPI::UnitFilter filter, BaseManager& bm)
 {
     BWAPI::Unit baseUnit = bm.getBasesMap()[base].m_base;
@@ -361,6 +376,13 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, in
         if (!bsm.isAdditionalSupplyNeeded())
         {
             pos = bsm.getBuildingLocation(type, builder,base);
+
+            if (pos == BWAPI::TilePositions::None)
+            {
+                //bsm.isAdditionalSupplyNeeded() = true;
+                pos = bsm.getBuildingLocation(BWAPI::UnitTypes::Protoss_Pylon, builder, base);
+            }
+
             hasBuilt = builder->build(type, pos);
         }
 

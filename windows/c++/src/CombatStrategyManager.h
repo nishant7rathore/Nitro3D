@@ -8,6 +8,6 @@ public:
 	CombatStrategyManager();
 
 	int evaluate(BWAPI::Unitset myUnits, BWAPI::Unitset enemyUnits);
-	void performMiniMax(BWAPI::Unitset myUnits, BWAPI::Unitset enemyUnits, int currDepth, int maxDepth);
+	void performMiniMax(BWAPI::Unitset myUnits, BWAPI::Unitset enemyUnits, int currDepth, int maxDepth, bool isMax);
 	bool isThisTerminalState(BWAPI::Unitset myUnits);
 };

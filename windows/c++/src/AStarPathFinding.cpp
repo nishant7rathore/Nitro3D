@@ -10,12 +10,12 @@ double AStarPathFinding::estimateCost(AStarNode n1, AStarNode n2)
 
 	//std::cout << cost << std::endl;
 
-	const double newCost = sqrt(pow(abs(n2.tilePos.x - n1.tilePos.x),2) + pow(abs(n2.tilePos.y - n1.tilePos.y), 2));
+	const double newCost = (sqrt(pow(abs(n2.tilePos.x - n1.tilePos.x),2) + pow(abs(n2.tilePos.y - n1.tilePos.y), 2)))*100;
 
 	return newCost;
 }
 
-void AStarPathFinding::startSearch(BWAPI::TilePosition& startPos, BWAPI::TilePosition& goalPos, BuildingStrategyManager& bm, Grid<int>& walkable, Grid<int>& buildable)
+int AStarPathFinding::startSearch(BWAPI::TilePosition& startPos, BWAPI::TilePosition& goalPos, BuildingStrategyManager& bm, Grid<int>& walkable, Grid<int>& buildable)
 {
 	m_openList = std::priority_queue<AStarNode, std::vector<AStarNode>, NodeCostComparion>();
 	m_openListGrid = Grid<AStarNode>(walkable.width(), walkable.height(), AStarNode());
@@ -28,8 +28,6 @@ void AStarPathFinding::startSearch(BWAPI::TilePosition& startPos, BWAPI::TilePos
 
 	m_startNode.hCost = estimatedCost;
 
-	std::vector<Resource> sortedList;
-
 	m_openList.push(m_startNode);
 
 	while (m_openList.size())
@@ -39,8 +37,8 @@ void AStarPathFinding::startSearch(BWAPI::TilePosition& startPos, BWAPI::TilePos
 
 		if (node.tilePos == m_goalNode.tilePos)
 		{
-			std::cout << node.tilePos << "   " << (int)node.gCost <<std::endl;
-			return;
+			std::cout << startPos << "   " << (int)node.gCost <<std::endl;
+			return node.gCost;
 		}
 
 		if (m_closedList[std::to_string(node.tilePos.x) + std::to_string(node.tilePos.y)]) continue;
@@ -57,18 +55,20 @@ void AStarPathFinding::startSearch(BWAPI::TilePosition& startPos, BWAPI::TilePos
 			
 			if (!nodeTile.isValid()) continue;
 
+			const double totalNodeGCost = cost + node.gCost;
+
 			if (walkable.get(x,y))
 			{
 				if (m_closedList[std::to_string(x) + std::to_string(y)]) continue;
 
-				if (m_openListGrid.get(x,y).gCost != -1 && m_openListGrid.get(x, y).hCost != -1)
+				double oldGCost = m_openListGrid.get(x, y).gCost;
+				double oldHCost = m_openListGrid.get(x, y).hCost;
+
+				if (oldGCost <= totalNodeGCost)
 				{
-					if (m_openListGrid.get(x, y).gCost <= cost)
-					{
-						continue;
-					}
+					continue;
 				}
-				const double totalNodeGCost = cost + node.gCost;
+
 				AStarNode childNode = AStarNode(nodeTile, &node, totalNodeGCost, estimatedCost);
 				estimatedCost = estimateCost(childNode, m_goalNode);
 				childNode.hCost = estimatedCost;
