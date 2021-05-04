@@ -1,5 +1,9 @@
 #pragma once
 
+/**
+* @author David Churchill
+*/
+
 #include <chrono>
 #include <fstream>
 #include <mutex>

@@ -19,7 +19,7 @@ int AStarPathFinding::startSearch(BWAPI::WalkPosition& startPos, BWAPI::WalkPosi
 {
 	m_openList = std::priority_queue<AStarNode, std::vector<AStarNode>, NodeCostComparion>();
 	m_openListGrid = Grid<AStarNode>(4*walkable.width(), 4*walkable.height(), AStarNode());
-	m_closedList = Grid<int>(4 * walkable.width(), 4 * walkable.height(), -1);
+	m_closedList = Grid<int>(4*walkable.width(), 4*walkable.height(), -1);
 
 	m_startNode = AStarNode(startPos,nullptr,0,0);
 	m_goalNode = AStarNode(BWAPI::WalkPosition(goalPos.x, goalPos.y), nullptr, DBL_MAX, 0);
@@ -27,7 +27,6 @@ int AStarPathFinding::startSearch(BWAPI::WalkPosition& startPos, BWAPI::WalkPosi
 	double estimatedCost = estimateCost(m_startNode, m_goalNode);
 
 	m_startNode.hCost = estimatedCost;
-
 	m_openList.push(m_startNode);
 
 	while (m_openList.size())

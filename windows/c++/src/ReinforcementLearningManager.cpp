@@ -4,36 +4,47 @@
 #include <fstream>
 #include "ReinforcementLearningManager.h"
 #include <chrono>
+#include <iomanip>
 
 ResultsSaver::ResultsSaver(StrategyManager& strategyManager) :m_stratManager(strategyManager)
 {
 	const auto clock = std::chrono::system_clock::now();
 	m_fileName = "Results_"+std::to_string(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count())+".txt";
+	initializeBandits();
 }
-
 
 void ResultsSaver::saveData(bool isWin)
 {
 	populateUnitKilledCount();
-	std::ofstream writer;
+	updateBanditData();
+	//game statistics
+	m_gameCount++;
+	isWin ? m_gamesWon++ : m_gamesLost++;
 
-	if (isFileExists())
+	std::ofstream writer;
+	if (isFileExists(""))
 	{
 		writer.open(m_fileName, std::ios_base::app);
 	}
-
 	else
 	{
 		writer.open(m_fileName);
 	}
 
-	writer << "Writing to the file " << isWin << std::endl;
+	writer << m_gameCount << "  " << m_gamesWon << " " << m_gamesLost << " " << BWAPI::Broodwar->enemy()->getRace()<<std::endl;
+	writer.close();
 }
 
-bool ResultsSaver::isFileExists()
+bool ResultsSaver::isFileExists(std::string fileName)
 {
+	if (fileName != "")
+	{
+		m_fileName = fileName;
+	}
 	std::ifstream infile(m_fileName);
-	return infile.good();
+	bool ret = infile.good();
+	infile.close();
+	return ret;
 }
 
 void ResultsSaver::populateUnitKilledCount()
@@ -51,8 +62,83 @@ void ResultsSaver::populateUnitKilledCount()
 			continue;
 		}
 
-		m_stratManager.getUnitStrategyManager().m_deletedUnitsCount[unit->getType()] += unit->getKillCount();
+		m_stratManager.getUnitStrategyManager().m_killedUnitsCount[unit->getType()] += unit->getKillCount();
+		m_stratManager.getUnitStrategyManager().m_deletedUnitsCount[unit->getType()] += 1;
 	}
 }
 
+void ResultsSaver::initializeBandits()
+{
+	m_bandits.clear();
+	std::string fileName = "BanditsData.txt";
 
+	if (isFileExists(fileName))
+	{
+		std::ifstream fin(fileName);
+
+		int ID, numAction = 0;
+		double estimatedValue = 0.0;
+
+		while (fin.good())
+		{
+			fin >> ID >> numAction >> estimatedValue;
+			m_bandits.push_back(Bandit(ID,numAction,estimatedValue));
+		}
+		fin.close();
+	}
+
+}
+
+void ResultsSaver::updateBanditData()
+{
+	std::ofstream writer;
+	writer.open("BanditsData.txt");
+
+	for (Bandit bandit:m_bandits)
+	{
+		double newValEstimate = getNewEstimatedValue(bandit);
+		bandit.getValueEstimate() = newValEstimate;
+		writer << bandit.getID();
+		writer << bandit.getNumOfActions();
+		writer << bandit.getValueEstimate() << std::endl;
+	}
+		
+}
+
+double ResultsSaver::getNewEstimatedValue(Bandit bandit)
+{
+	double epsilon = 0.15; //hardcoding this value for now
+	double randomEpsilonVal = (rand()%100)/100;
+	double reward = 0.0; 
+	double valueEstimate = bandit.getValueEstimate();
+
+	if (randomEpsilonVal < epsilon)
+	{
+		reward = m_stratManager.getUnitStrategyManager().m_killedUnitsCount[bandit.getID()];
+	}
+	else
+	{
+		reward = bandit.getValueEstimate();
+	}
+
+	bandit.getNumOfActions() += 1;
+	valueEstimate = valueEstimate + (1.0 / bandit.getNumOfActions()) * (reward - valueEstimate);
+
+	return valueEstimate;
+
+}
+
+int Bandit::getID()
+{
+	return m_id;
+}
+
+int& Bandit::getNumOfActions()
+{
+	return m_numOfActions;
+}
+
+double& Bandit::getValueEstimate()
+{
+	return m_valueEstimate;
+}

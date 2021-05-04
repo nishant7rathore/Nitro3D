@@ -3,6 +3,9 @@
 #include "BWAPI.h"
 class CombatStrategyManager
 {
+	int m_numMyUnits = 5;
+	int m_numTheirUnits = 5;
+
 public:
 
 	CombatStrategyManager();

@@ -9,9 +9,6 @@ int CombatStrategyManager::evaluate(BWAPI::Unitset myUnits, BWAPI::Unitset enemy
 	return 0;
 }
 
-int numMyUnits = 5;
-int numTheirUnits = 5;
-
 void CombatStrategyManager::performMiniMax(BWAPI::Unitset myUnits, BWAPI::Unitset enemyUnits, int currDepth, int maxDepth, bool isMax)
 {
 	if (isThisTerminalState(myUnits) || currDepth > maxDepth)

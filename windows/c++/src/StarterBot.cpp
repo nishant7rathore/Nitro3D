@@ -629,11 +629,13 @@ void StarterBot::onUnitDestroy(BWAPI::Unit unit)
         int& completedNum = m_strategyManager.getNumberOfCompletedUnits(unit->getType());
         completedNum--;
 
-        m_strategyManager.getUnitStrategyManager().m_deletedUnitsCount[unit->getType()] += unit->getKillCount();
+        m_strategyManager.getUnitStrategyManager().m_killedUnitsCount[unit->getType()] += unit->getKillCount();
     }
 
-    if (unit != nullptr && !unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()) && (unit->getType() == BWAPI::UnitTypes::Protoss_Zealot || unit->getType() == BWAPI::UnitTypes::Protoss_Dragoon || unit->getType() == BWAPI::UnitTypes::Protoss_Dark_Templar))
+    if (unit != nullptr && !unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()) && (unit->getType() == BWAPI::UnitTypes::Protoss_Zealot || unit->getType() == BWAPI::UnitTypes::Protoss_Dragoon || unit->getType() == BWAPI::UnitTypes::Protoss_Dark_Templar || unit->getType() == BWAPI::UnitTypes::Protoss_Corsair))
     {
+        m_strategyManager.getUnitStrategyManager().m_deletedUnitsCount[unit->getType()] += 1;
+    
         if (zealots.size() > 0)
         {
             zealots.erase(unit);
