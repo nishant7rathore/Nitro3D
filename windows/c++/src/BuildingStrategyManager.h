@@ -62,7 +62,7 @@ class BuildingStrategyManager
 	std::vector<BFSNode> openList; // BFS open list
 	std::vector<std::shared_ptr<DFSNode>> dfsOpenList; // BFS open list
 	Grid<int> distanceMapClosedList; // BFS closed map
-
+	bool m_isPylonRequired;
 	std::vector<BFSNode> path; // final path 
 
 public:
@@ -87,6 +87,7 @@ public:
 	int& getWorkerID();
 	bool& isAdditionalSupplyNeeded();
 	bool& isBuildingBuiltNeeded();
+	bool& isPylonRequired();
 	void setGrids(Grid<int>& walkable, Grid<int>& buildable);
 	void findCannonBuildingLocation(int base);
 	BWAPI::TilePosition getCannonPosition(int base, BWAPI::UnitType unitType);

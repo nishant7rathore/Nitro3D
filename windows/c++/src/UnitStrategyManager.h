@@ -8,6 +8,7 @@ public:
 	UnitStrategyManager();
 
 	std::map<BWAPI::UnitType,int> m_unitBuildOrder;
+	std::map<BWAPI::UnitType, int> m_deletedUnitsCount;
 
 	//BWAPI::TilePosition getUnitLocation(BWAPI::UnitType unit);
 	int getNumberOfUnits(BWAPI::UnitType unit);

@@ -85,7 +85,13 @@ void MapTools::onStart(ResourceManager& rm, BuildingStrategyManager& bm)
     std::cout << m_allMinerals.size();
     for (auto& t: m_allMinerals)
     {
-        star.startSearch(BWAPI::Broodwar->self()->getStartLocation(), BWAPI::TilePosition(t.m_x,t.m_y) , bm, m_walkable, m_buildable);
+        int startX = 4*BWAPI::Broodwar->self()->getStartLocation().x;
+        int startY = 4*BWAPI::Broodwar->self()->getStartLocation().y;
+
+        int goalX = 4*t.m_x;
+        int goalY = 4 * t.m_y;
+
+        star.startSearch(BWAPI::WalkPosition(startX, startY), BWAPI::WalkPosition(goalX, goalY), bm, m_walkable, m_buildable);
     }
 }
 

@@ -17,6 +17,7 @@
     <ClInclude Include="..\src\CombatStrategyManager.h" />
     <ClInclude Include="..\src\Grid.hpp" />
     <ClInclude Include="..\src\MapTools.h" />
+    <ClInclude Include="..\src\ReinforcementLearningManager.h" />
     <ClInclude Include="..\src\ResourceManager.h" />
     <ClInclude Include="..\src\StarterBot.h" />
     <ClInclude Include="..\src\StrategyManager.h" />
@@ -31,6 +32,7 @@
     <ClCompile Include="..\src\CombatStrategyManager.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\MapTools.cpp" />
+    <ClCompile Include="..\src\ReinforcementLearningManager.cpp" />
     <ClCompile Include="..\src\ResourceManager.cpp" />
     <ClCompile Include="..\src\StarterBot.cpp" />
     <ClCompile Include="..\src\StrategyManager.cpp" />

@@ -32,6 +32,8 @@ Resource Tools::GetClosestResourceMineralToUnit(BWAPI::Position p)
     {
         if (!u->getType().isMineralField()) continue;
 
+        if (u->getResources() < 10) continue;
+
         if (!closestUnit || u->getDistance(p) < closestUnit->getDistance(p))
         {
             closestUnit = u;
@@ -202,7 +204,9 @@ int Tools::CountBaseUnitssWithFilter(int base, BWAPI::UnitFilter filter, BaseMan
 
     for (size_t i = 0; i < bm.getBasesMap()[base].m_workers.size(); i++)
     {
-        if (BWAPI::Broodwar->getUnit(bm.getBasesMap()[base].m_workers[i])->getType() == BWAPI::UnitTypes::Protoss_Probe)
+        BWAPI::Unit worker = BWAPI::Broodwar->getUnit(bm.getBasesMap()[base].m_workers[i]);
+
+        if (worker->getType() == BWAPI::UnitTypes::Protoss_Probe && worker->isGatheringMinerals())
         {
             size++;
         }
@@ -380,7 +384,8 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, in
             if (pos == BWAPI::TilePositions::None)
             {
                 //bsm.isAdditionalSupplyNeeded() = true;
-                pos = bsm.getBuildingLocation(BWAPI::UnitTypes::Protoss_Pylon, builder, base);
+                pos = BWAPI::Broodwar->getBuildLocation(BWAPI::UnitTypes::Protoss_Pylon,bsm.getLastBuiltLocation(base));
+                if(pos.isValid()) bsm.isPylonRequired() = true;
             }
 
             hasBuilt = builder->build(type, pos);

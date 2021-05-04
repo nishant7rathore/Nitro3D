@@ -2,28 +2,28 @@
 
 double AStarPathFinding::estimateCost(AStarNode n1, AStarNode n2)
 {
-	const size_t dx = abs(n2.tilePos.x - n1.tilePos.x);
-	const size_t dy = abs(n2.tilePos.y - n1.tilePos.y);
+	const size_t dx = abs(n2.walkPos.x - n1.walkPos.x);
+	const size_t dy = abs(n2.walkPos.y - n1.walkPos.y);
 	const size_t hDiag = dx >= dy ? dy : dx;
 	const size_t hStraight = dx + dy;
 	const double cost = 141 * hDiag + 100 * (hStraight - 2 * hDiag);
 
 	//std::cout << cost << std::endl;
 
-	const double newCost = (sqrt(pow(abs(n2.tilePos.x - n1.tilePos.x),2) + pow(abs(n2.tilePos.y - n1.tilePos.y), 2)))*100;
+	const double newCost = (sqrt(pow(abs(n2.walkPos.x - n1.walkPos.x),2) + pow(abs(n2.walkPos.y - n1.walkPos.y), 2)))*100;
 
 	return newCost;
 }
 
-int AStarPathFinding::startSearch(BWAPI::TilePosition& startPos, BWAPI::TilePosition& goalPos, BuildingStrategyManager& bm, Grid<int>& walkable, Grid<int>& buildable)
+int AStarPathFinding::startSearch(BWAPI::WalkPosition& startPos, BWAPI::WalkPosition& goalPos, BuildingStrategyManager& bm, Grid<int>& walkable, Grid<int>& buildable)
 {
 	m_openList = std::priority_queue<AStarNode, std::vector<AStarNode>, NodeCostComparion>();
-	m_openListGrid = Grid<AStarNode>(walkable.width(), walkable.height(), AStarNode());
-	m_closedList.clear();
+	m_openListGrid = Grid<AStarNode>(4*walkable.width(), 4*walkable.height(), AStarNode());
+	m_closedList = Grid<int>(4 * walkable.width(), 4 * walkable.height(), -1);
 
 	m_startNode = AStarNode(startPos,nullptr,0,0);
-	m_goalNode = AStarNode(BWAPI::TilePosition(goalPos.x, goalPos.y), nullptr, DBL_MAX, 0);
-
+	m_goalNode = AStarNode(BWAPI::WalkPosition(goalPos.x, goalPos.y), nullptr, DBL_MAX, 0);
+	m_closedList.set(m_startNode.walkPos.x, m_startNode.walkPos.y,0);
 	double estimatedCost = estimateCost(m_startNode, m_goalNode);
 
 	m_startNode.hCost = estimatedCost;
@@ -35,31 +35,41 @@ int AStarPathFinding::startSearch(BWAPI::TilePosition& startPos, BWAPI::TilePosi
 		AStarNode node = m_openList.top();
 		m_openList.pop();
 
-		if (node.tilePos == m_goalNode.tilePos)
+		if (node.walkPos == m_goalNode.walkPos)
 		{
 			std::cout << startPos << "   " << (int)node.gCost <<std::endl;
 			return node.gCost;
 		}
 
-		if (m_closedList[std::to_string(node.tilePos.x) + std::to_string(node.tilePos.y)]) continue;
-		m_closedList[std::to_string(node.tilePos.x) + std::to_string(node.tilePos.y)] = true;
-
-		for (int d=0; d<8; d++)
+		if (m_closedList.get(node.walkPos.x,node.walkPos.y) > 0)
 		{
-			const int x = node.tilePos.x + bm.m_directions[d].x;
-			const int y = node.tilePos.y + bm.m_directions[d].y;
+			continue;
+		}
 
-			const int cost = m_actionCost[d];
+		//if (m_closedList[std::to_string(node.walkPos.x) + std::to_string(node.walkPos.y)]) continue;
+		//m_closedList[std::to_string(node.walkPos.x) + std::to_string(node.walkPos.y)] = true;
 
-			const BWAPI::TilePosition nodeTile = BWAPI::TilePosition(x, y);
+		for (int d=0; d<4; d++)
+		{
+			const int x = node.walkPos.x + bm.m_directions[d].x;
+			const int y = node.walkPos.y + bm.m_directions[d].y;
+
+			if (m_closedList.get(x, y) >= 0)
+			{
+				continue;
+			}
+
+			const double cost = m_actionCost[d];
+
+			const BWAPI::WalkPosition nodeTile = BWAPI::WalkPosition(x, y);
 			
 			if (!nodeTile.isValid()) continue;
 
 			const double totalNodeGCost = cost + node.gCost;
 
-			if (walkable.get(x,y))
+			if (BWAPI::Broodwar->isWalkable(x,y))
 			{
-				if (m_closedList[std::to_string(x) + std::to_string(y)]) continue;
+				//if (m_closedList[std::to_string(x) + std::to_string(y)]) continue;
 
 				double oldGCost = m_openListGrid.get(x, y).gCost;
 				double oldHCost = m_openListGrid.get(x, y).hCost;
@@ -82,5 +92,5 @@ int AStarPathFinding::startSearch(BWAPI::TilePosition& startPos, BWAPI::TilePosi
 	}
 
 	std::cout << "Exiting..." << goalPos << std::endl;
-
+	return INT_MAX;
 }

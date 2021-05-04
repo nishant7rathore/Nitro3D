@@ -9,6 +9,8 @@ UnitStrategyManager::UnitStrategyManager()
     m_unitBuildOrder.emplace(BWAPI::UnitTypes::Protoss_Dark_Templar, 20);
     m_unitBuildOrder.emplace(BWAPI::UnitTypes::Protoss_Corsair, 10);
     m_unitBuildOrder.emplace(BWAPI::UnitTypes::Protoss_Observer, 5);
+
+    m_deletedUnitsCount.clear();
 }
 
 int UnitStrategyManager::getNumberOfUnits(BWAPI::UnitType unit)
@@ -30,7 +32,7 @@ void UnitStrategyManager::trainCombatUnits(std::map<BWAPI::UnitType,int>& comple
             if (completedUnits[it->first] <= it->second)
             {
                 bool isSuccess = builder->train(it->first);
-                if (isSuccess) std::cout << "Training " << it->first;
+                //if (isSuccess) std::cout << "Training " << it->first;
             }
             
         }
