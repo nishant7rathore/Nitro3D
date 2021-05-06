@@ -8,9 +8,10 @@ struct Resource
     size_t m_x;
     size_t m_y;
     int m_resourceAmount;
+    int m_distance;
     bool m_isGeyser = false;
 
-    Resource(int id, size_t x, size_t y, int resourceAmount, bool isGeyser);
+    Resource(int id, size_t x, size_t y, int resourceAmount, int distance, bool isGeyser);
     Resource()
     {
 

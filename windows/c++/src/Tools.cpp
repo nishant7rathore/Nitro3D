@@ -39,7 +39,7 @@ Resource Tools::GetClosestResourceMineralToUnit(BWAPI::Position p)
             closestUnit = u;
         }
     }
-    return Resource(closestUnit->getID(),closestUnit->getTilePosition().x, closestUnit->getTilePosition().y, closestUnit->getInitialResources(), false);
+    return Resource(closestUnit->getID(),closestUnit->getTilePosition().x, closestUnit->getTilePosition().y, closestUnit->getInitialResources(), closestUnit->getDistance(p), false);
 }
 
 
@@ -51,7 +51,7 @@ std::vector<Resource> Tools::GetAllMinerals(BWAPI::Position p)
     {
         if (unit->getType() != BWAPI::UnitTypes::Resource_Vespene_Geyser) continue;
 
-        allMinerals.push_back(Resource(unit->getID(), unit->getTilePosition().x, unit->getTilePosition().y, unit->getInitialResources(), false));
+        allMinerals.push_back(Resource(unit->getID(), unit->getTilePosition().x, unit->getTilePosition().y, unit->getInitialResources(), unit->getDistance(p), false));
     }
 
     return allMinerals;
@@ -60,11 +60,8 @@ std::vector<Resource> Tools::GetAllMinerals(BWAPI::Position p)
 std::vector<BWAPI::TilePosition> Tools::GetBaseLocationsList(std::vector<Resource>& allMineralsList, BuildingStrategyManager& bm)
 {
     BWAPI::Unit resourceDepot = Tools::GetDepot();
-
     std::vector<Resource> resourceList;
-
     std::vector<BWAPI::TilePosition> baseLocations;
-
     Resource currentResource;
 
     int distance = INT_MAX;
@@ -84,7 +81,6 @@ std::vector<BWAPI::TilePosition> Tools::GetBaseLocationsList(std::vector<Resourc
                 distance = newDistance;
                 currentResource = resource;
             }
-
         }
 
         if (!isResourceInOurList(currentResource, resourceList))
@@ -160,7 +156,7 @@ Resource Tools::GetClosestGeyserToUnit(BWAPI::Position p)
         }
     }
 
-    return Resource(closestUnit->getID(),closestUnit->getTilePosition().x, closestUnit->getTilePosition().y, closestUnit->getInitialResources(),true);
+    return Resource(closestUnit->getID(),closestUnit->getTilePosition().x, closestUnit->getTilePosition().y, closestUnit->getInitialResources(), closestUnit->getDistance(p),true);
 }
 
 int Tools::CountUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units)
@@ -197,8 +193,6 @@ int Tools::CountBaseUnitssWithFilter(int base, BWAPI::UnitFilter filter, BaseMan
     BWAPI::Unit baseUnit = bm.getBasesMap()[base].m_base;
 
     if (!baseUnit || !baseUnit->exists()) return 0;
-
-    //BWAPI::Unitset units = BWAPI::Broodwar->getUnitsInRadius(baseUnit->getPosition(),1088,filter);
 
     size_t size = 0;
 
@@ -247,15 +241,6 @@ BWAPI::Unit Tools::GetUnitOfType(BWAPI::UnitType type)
 
 BWAPI::Unit Tools::GetWorkerExcluding(int ID, int base, BaseManager& bm)
 {
-    //// For each unit that we own
-    //for (auto& unit : BWAPI::Broodwar->self()->getUnits())
-    //{
-    //    // if the unit is of the correct type, and it actually has been constructed, return it
-    //    if (unit->getType().isWorker() && unit->isCompleted() && unit->getID() != ID)
-    //    {
-    //        return unit;
-    //    }
-    //}
 
     for (size_t i = 0; i < bm.getBasesMap()[base].m_workers.size(); i++)
     {

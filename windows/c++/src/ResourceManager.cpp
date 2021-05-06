@@ -24,12 +24,13 @@ void ResourceManager::calculateDistances()
     isJobComplete = true;
 }
 
-Resource::Resource(int id, size_t x, size_t y, int resourceAmount, bool isGeyser) :
+Resource::Resource(int id, size_t x, size_t y, int resourceAmount, int distance, bool isGeyser) :
     m_id(id),
     m_x(x),
     m_y(y),
     m_resourceAmount(resourceAmount),
-    m_isGeyser(isGeyser)
+    m_isGeyser(isGeyser),
+    m_distance(distance)
 {
 
 }

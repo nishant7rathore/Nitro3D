@@ -22,7 +22,7 @@ void ResultsSaver::saveData(bool isWin)
 	isWin ? m_gamesWon++ : m_gamesLost++;
 
 	std::ofstream writer;
-	if (isFileExists(""))
+	if (isFileExists(m_fileName))
 	{
 		writer.open(m_fileName, std::ios_base::app);
 	}
@@ -37,11 +37,7 @@ void ResultsSaver::saveData(bool isWin)
 
 bool ResultsSaver::isFileExists(std::string fileName)
 {
-	if (fileName != "")
-	{
-		m_fileName = fileName;
-	}
-	std::ifstream infile(m_fileName);
+	std::ifstream infile(fileName);
 	bool ret = infile.good();
 	infile.close();
 	return ret;
@@ -94,13 +90,21 @@ void ResultsSaver::updateBanditData()
 	std::ofstream writer;
 	writer.open("BanditsData.txt");
 
+	if (m_bandits.size() == 0)
+	{
+		m_bandits.push_back(Bandit(BWAPI::UnitTypes::Protoss_Zealot, 0, 0.0));
+		m_bandits.push_back(Bandit(BWAPI::UnitTypes::Protoss_Dragoon, 0, 0.0));
+		m_bandits.push_back(Bandit(BWAPI::UnitTypes::Protoss_Dark_Templar, 0, 0.0));
+		m_bandits.push_back(Bandit(BWAPI::UnitTypes::Protoss_Corsair, 0, 0.0));
+	}
+
 	for (Bandit bandit:m_bandits)
 	{
 		double newValEstimate = getNewEstimatedValue(bandit);
 		bandit.getValueEstimate() = newValEstimate;
-		writer << bandit.getID();
-		writer << bandit.getNumOfActions();
-		writer << bandit.getValueEstimate() << std::endl;
+		writer << bandit.getID() << "  ";
+		writer << bandit.getNumOfActions() << "  ";;
+		writer << bandit.getValueEstimate() << "  " <<std::endl;
 	}
 		
 }
@@ -121,8 +125,9 @@ double ResultsSaver::getNewEstimatedValue(Bandit bandit)
 		reward = bandit.getValueEstimate();
 	}
 
-	bandit.getNumOfActions() += 1;
-	valueEstimate = valueEstimate + (1.0 / bandit.getNumOfActions()) * (reward - valueEstimate);
+	int& numActions = bandit.getNumOfActions();
+	numActions += 1;
+	valueEstimate = valueEstimate + (1.0 / numActions) * (reward - valueEstimate);
 
 	return valueEstimate;
 

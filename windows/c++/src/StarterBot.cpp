@@ -100,8 +100,6 @@ void StarterBot::onFrame()
 BWAPI::TilePosition baseLocationTilePos = BWAPI::TilePositions::Invalid;
 BWAPI::TilePosition nexusTilePos;
 
-
-
 void StarterBot::doScouting()
 {
     auto& startLocations = BWAPI::Broodwar->getStartLocations();
@@ -172,8 +170,9 @@ void StarterBot::findAdditionalBases()
     BWAPI::Unit worker = Tools::GetWorkerExcluding(-1,0, m_strategyManager.getBaseManager());
     if (!worker) return;
 
-    for (auto baseLocation: m_mapTools.m_baseLocations)
+    for (auto& baseLocationResource : m_mapTools.m_aStarPathFinding.m_baseLocations)
     {
+        BWAPI::TilePosition baseLocation = BWAPI::TilePosition(baseLocationResource.m_x, baseLocationResource.m_y);
         BWAPI::Unit closestUnit = BWAPI::Broodwar->getClosestUnit(BWAPI::Position(baseLocation), BWAPI::Filter::IsResourceDepot, 256);
         if (!closestUnit)
         {
@@ -184,11 +183,10 @@ void StarterBot::findAdditionalBases()
                 return;
             }
         }
-     
+
     }
 }
 
-//TODO:: update this code
 void StarterBot::doUpgrades()
 {
     if (m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded()) return;
@@ -256,7 +254,7 @@ void StarterBot::sendIdleWorkersToMinerals()
 
                 if (Tools::CountBaseUnitssWithFilter(1, BWAPI::Filter::IsGatheringMinerals && BWAPI::Filter::GetPlayer, m_strategyManager.getBaseManager()) < 11)
                 {
-                    auto u = m_resourceManager.getMineralResource(m_mapTools.m_baseLocations[1].x, m_mapTools.m_baseLocations[1].y);
+                    auto u = m_resourceManager.getMineralResource(m_mapTools.m_aStarPathFinding.m_baseLocations.m_allMinerals[1].m_x, m_mapTools.m_aStarPathFinding.m_baseLocations.m_allMinerals[1].m_y);
                     BWAPI::Unit closestMineral = BWAPI::Broodwar->getUnit(u.m_id);
 
                     if (closestMineral->getResources() == 0)
@@ -296,8 +294,6 @@ void StarterBot::sendIdleWorkersToMinerals()
                 }
             }
 
-         
-          
         }
     }
 }
@@ -352,7 +348,7 @@ void StarterBot::buildAdditionalSupply()
 
 
     // If we have a sufficient amount of supply, we don't need to do anything
-    if (!m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded() || BWAPI::Broodwar->self()->supplyUsed() >= 200)
+    if (!m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded() || BWAPI::Broodwar->self()->supplyUsed() >= 400)
     {
         return;
     }
@@ -425,7 +421,7 @@ void StarterBot::buildBuildings()
         {
             //numUnits = Tools::CountBuildingUnitsOfType(BWAPI::UnitTypes::Protoss_Gateway, BWAPI::Broodwar->self()->getUnits());
             //std::cout << "Gateway Built " << numUnits << std::endl;
-            //BWAPI::Broodwar->printf("Started Building %s", BWAPI::UnitTypes::Protoss_Nexus.c_str());
+            BWAPI::Broodwar->printf("Started Building %s", BWAPI::UnitTypes::Protoss_Nexus.c_str());
             //return;
             //m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Gateway]= numUnits;
         }
@@ -715,16 +711,16 @@ void StarterBot::onSendText(std::string text)
         m_mapTools.toggleDraw();
     }
 
-    std::regex e("([0-9]+,[0-9]+)");
+    //std::regex e("([0-9]+,[0-9]+)");
 
-    if (std::regex_match(text,e))
+    //if (std::regex_match(text,e))
     {
         //char* cstr = new char(text.length()+1);
         //strcpy(cstr,text.c_str());
-        std::vector<char> cstr(text.c_str(), text.c_str()+text.size()+1);
+       // std::vector<char> cstr(text.c_str(), text.c_str()+text.size()+1);
         //std::cout << strtok(cstr.data(),",") << std::endl;
-        int n1 = atoi(strtok(cstr.data(), ","));
-        int n2 = atoi(strtok(NULL, ","));
+        //int n1 = atoi(strtok(cstr.data(), ","));
+        //int n2 = atoi(strtok(NULL, ","));
         //AStarPathFinding star = AStarPathFinding();
         //star.startSearch(BWAPI::Broodwar->self()->getStartLocation(), BWAPI::TilePosition(n1,n2), m_strategyManager.getBuildingStrategyManager(), m_mapTools.m_walkable, m_mapTools.m_buildable);
     }
@@ -862,32 +858,6 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
             int base = m_strategyManager.getBaseManager().getBaseofUnit(unit);
             m_strategyManager.getBaseManager().getBase(base).m_workersWanted += 3;
         }
-
-        //m_strategyManager.getBaseManager().addUnitToBase(unit,m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Nexus));
-
-        //if (unit->getType().buildsWhat().count(BWAPI::UnitTypes::Protoss_Zealot))
-        //{
-        //    int& numUnits = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Zealot);
-        //    int& numDragoonUnits = m_strategyManager.getNumberOfUnits(BWAPI::UnitTypes::Protoss_Dragoon);
-        //    if (numUnits < m_strategyManager.getUnitStrategyManager().getNumberOfUnits(BWAPI::UnitTypes::Protoss_Zealot))
-        //    {
-        //        //numUnits++;
-        //        if (unit->train(BWAPI::UnitTypes::Protoss_Zealot)) m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Zealot] = numUnits;
-        //        numUnits = Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Zealot,BWAPI::Broodwar->self()->getUnits());
-        //    }
-        //    if (numDragoonUnits < m_strategyManager.getUnitStrategyManager().getNumberOfUnits(BWAPI::UnitTypes::Protoss_Dragoon))
-        //    {
-        //        //numDragoonUnits++;
-        //        if (unit->train(BWAPI::UnitTypes::Protoss_Dragoon)) m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Dragoon] = numDragoonUnits;
-        //        numUnits = Tools::CountUnitsOfType(BWAPI::UnitTypes::Protoss_Dragoon, BWAPI::Broodwar->self()->getUnits());
-        //    }
-        //}
-        //}
-        //else if (unit->getType().isRefinery())
-        //{
-        //    Tools::GetDepot()->train(BWAPI::UnitTypes::Protoss_Probe);
-        //    Tools::GetDepot()->train(BWAPI::UnitTypes::Protoss_Probe);
-        //}
     }
 
     else if (unit->getType() == BWAPI::UnitTypes::Protoss_Zealot || unit->getType() == BWAPI::UnitTypes::Protoss_Dragoon || unit->getType() == BWAPI::UnitTypes::Protoss_Dark_Templar)
@@ -899,8 +869,6 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
         else if ((zealots.size() < 10 && !isUnderAttack))
         {
             if(!isScoutingAllowed) zealots.emplace(unit);
-            //isUnderAttack = false;
-
             if (zealots.size() == 10)
             {
                 isScoutingAllowed = true;
@@ -913,6 +881,14 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
 
         if (m_strategyManager.getBaseManager().getBasesMap().size() > 1 && baseLocationTilePos.isValid() && m_strategyManager.getNumberOfCompletedUnits(BWAPI::UnitTypes::Protoss_Nexus) > 1)
         {
+            int size = m_strategyManager.getBaseManager().getBasesMap()[1].m_buildings.size();
+            BWAPI::Unit nexus = m_strategyManager.getBaseManager().getUnitOfTypeFromBase(1, BWAPI::UnitTypes::Protoss_Nexus);
+            size = size == 0 ? 0 : size - 1;
+            BWAPI::Unit lastBuildingBuilt = BWAPI::Broodwar->getUnit(m_strategyManager.getBaseManager().getBasesMap()[1].m_buildings[size]);
+            if (nexus->getDistance(lastBuildingBuilt) <= 320)
+            {
+                baseLocationTilePos = lastBuildingBuilt->getTilePosition();
+            }
             if(defenders.size() > 5) unit->move(BWAPI::Position(baseLocationTilePos));
         }
     }
@@ -942,27 +918,7 @@ void StarterBot::onUnitShow(BWAPI::Unit unit)
         if (unit->getDistance(zealots.getPosition()) < 640)
         {
             zealots.attack(unit);
-      /*      for (auto u : zealots)
-            {
-                if (u && (u->getLastCommand().getType() != BWAPI::UnitCommandTypes::Attack_Unit) || (u->getLastCommand().getTarget() && u->getLastCommand().getTarget()->getID() != unit->getID()))
-                {
-                    std::cout << "base attackers in action " << std::endl;
-                    u->attack(unit);
-                }
-            }*/
-
-
         }
-        //BWAPI::Unit u = unit->getClosestUnit(BWAPI::Filter::IsEnemy);
-        //if(u && !u->getType().isBuilding() && u->canAttack() && !u->isAttacking() && !u->getType().isWorker()) defenders.attack(unit);
-    /*    for (auto u : defenders)
-        {
-            if (u && (u->getLastCommand().getType() != BWAPI::UnitCommandTypes::Attack_Unit) || (u->getLastCommand().getTarget() && u->getLastCommand().getTarget()->getID() != unit->getID()))
-            {
-                std::cout << "Defenders in action " << std::endl;
-                u->attack(unit);
-            }
-        }*/
 
         defenders.attack(unit);
        

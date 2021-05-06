@@ -1,10 +1,9 @@
 #pragma once
-
-#include <BWAPI.h>
 #include <vector>
 #include "Tools.h"
+#include <BWAPI.h>
 #include "ResourceManager.h"
-
+#include "AStarPathFinding.h"
 
 struct MapTools
 {
@@ -12,8 +11,7 @@ struct MapTools
     Grid<int>   m_buildable;      // whether a tile is buildable (includes static resources)
     Grid<int>   m_depotBuildable; // whether a depot is buildable on a tile (illegal within 3 tiles of static resource)
     Grid<int>   m_lastSeen;       // the last time any of our units has seen this position on the map
-    std::vector<BWAPI::TilePosition> m_baseLocations;
-    std::vector<Resource> m_allMinerals;
+    AStarPathFinding m_aStarPathFinding;
     int         m_width = 0;
     int         m_height = 0;
     int         m_frame = 0;
@@ -26,6 +24,7 @@ struct MapTools
     MapTools() noexcept;
 
     void onStart(ResourceManager& rm, BuildingStrategyManager& bm);
+    void getBaseLocations(std::vector<Resource>& allMinerals, BuildingStrategyManager& bm);
     void    onFrame();
     void    draw() const;
     void    toggleDraw();

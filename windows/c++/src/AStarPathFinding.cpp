@@ -1,5 +1,10 @@
 #include "AStarPathFinding.h"
 
+AStarPathFinding::AStarPathFinding(std::vector<Resource>& resources)
+{
+	m_baseLocations.m_allMinerals = resources;
+}
+
 double AStarPathFinding::estimateCost(AStarNode n1, AStarNode n2)
 {
 	const size_t dx = abs(n2.walkPos.x - n1.walkPos.x);
@@ -36,7 +41,7 @@ int AStarPathFinding::startSearch(BWAPI::WalkPosition& startPos, BWAPI::WalkPosi
 
 		if (node.walkPos == m_goalNode.walkPos)
 		{
-			std::cout << startPos << "   " << (int)node.gCost <<std::endl;
+			//std::cout << startPos << "   " << (int)node.gCost <<std::endl;
 			return node.gCost;
 		}
 
@@ -45,15 +50,12 @@ int AStarPathFinding::startSearch(BWAPI::WalkPosition& startPos, BWAPI::WalkPosi
 			continue;
 		}
 
-		//if (m_closedList[std::to_string(node.walkPos.x) + std::to_string(node.walkPos.y)]) continue;
-		//m_closedList[std::to_string(node.walkPos.x) + std::to_string(node.walkPos.y)] = true;
-
 		for (int d=0; d<4; d++)
 		{
 			const int x = node.walkPos.x + bm.m_directions[d].x;
 			const int y = node.walkPos.y + bm.m_directions[d].y;
 
-			if (m_closedList.get(x, y) >= 0)
+			if (x < 0 || y < 0 || m_closedList.get(x, y) >= 0)
 			{
 				continue;
 			}
@@ -90,6 +92,6 @@ int AStarPathFinding::startSearch(BWAPI::WalkPosition& startPos, BWAPI::WalkPosi
 
 	}
 
-	std::cout << "Exiting..." << goalPos << std::endl;
 	return INT_MAX;
 }
+

@@ -1,7 +1,7 @@
-#include "MapTools.h"
 #include "ResourceManager.h"
 #include <queue>
-
+#include <BWAPI.h>
+#include "BuildingStrategyManager.h"
 
 #pragma once
 //AStar Node
@@ -45,6 +45,26 @@ public:
     }
 };
 
+class ResourceDistanceComparision
+{
+
+public:
+
+    ResourceDistanceComparision() {};
+
+    bool operator() (const Resource& r1, const Resource& r2) const
+    {
+        return r1.m_distance > r2.m_distance;
+    }
+};
+
+struct ResourcePriorityQueue : std::priority_queue < Resource, std::vector<Resource>, ResourceDistanceComparision>
+{
+    std::vector<Resource> m_allMinerals;
+    auto begin() const { return m_allMinerals.begin(); }
+    auto end() const { return m_allMinerals.end(); }
+};
+
 class AStarPathFinding
 {
     AStarNode m_startNode;
@@ -55,15 +75,11 @@ class AStarPathFinding
 public:
 
     AStarPathFinding() {};
-    //AStarPathFinding(AStarNode startNode, AStarNode goalNode)
-    //{
-    //    m_startNode = startNode;
-    //    m_goalNode = goalNode;
-    //}
+    AStarPathFinding(std::vector<Resource>& resources);
     std::priority_queue<AStarNode,std::vector<AStarNode>,NodeCostComparion> m_openList;
     Grid<int> m_closedList;
     Grid<AStarNode> m_openListGrid;
     double estimateCost(AStarNode n1, AStarNode n2);
     int startSearch(BWAPI::WalkPosition& startPos, BWAPI::WalkPosition& goalPos, BuildingStrategyManager& bm, Grid<int>& walkable, Grid<int>& buildable);
-
+    ResourcePriorityQueue m_baseLocations;
 };

@@ -1,6 +1,5 @@
 #include "MapTools.h"
 #include "ResourceManager.h"
-#include "AStarPathFinding.h"
 
 #include <iostream>
 #include <sstream>
@@ -15,7 +14,8 @@ MapTools::MapTools() noexcept
 
 void MapTools::onStart(ResourceManager& rm, BuildingStrategyManager& bm)
 {
-    m_allMinerals = Tools::GetAllMinerals(BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
+    std::vector<Resource> allMinerals = Tools::GetAllMinerals(BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
+    m_aStarPathFinding = AStarPathFinding(allMinerals);
 
     m_width          = BWAPI::Broodwar->mapWidth();
     m_height         = BWAPI::Broodwar->mapHeight();
@@ -41,8 +41,6 @@ void MapTools::onStart(ResourceManager& rm, BuildingStrategyManager& bm)
             rm.setRefineryResource(x, y, closestGeyeser);
         }
     }
-
-    m_baseLocations = Tools::GetBaseLocationsList(m_allMinerals, bm);
 
     // set tiles that static resources are on as unbuildable
     for (auto & resource : BWAPI::Broodwar->getStaticNeutralUnits())
@@ -81,17 +79,38 @@ void MapTools::onStart(ResourceManager& rm, BuildingStrategyManager& bm)
 
 
     //std::cout << BWAPI::TilePosition(1, 0) << std::endl;
-    AStarPathFinding star = AStarPathFinding();
-    std::cout << m_allMinerals.size();
-    for (auto& t: m_allMinerals)
-    {
-        int startX = 4*BWAPI::Broodwar->self()->getStartLocation().x;
-        int startY = 4*BWAPI::Broodwar->self()->getStartLocation().y;
 
-        int goalX = 4*t.m_x;
+    getBaseLocations(allMinerals,bm);
+}
+
+void MapTools::getBaseLocations(std::vector<Resource>& allMinerals, BuildingStrategyManager& bm)
+{
+    int distance = 0;
+    ResourcePriorityQueue sortedList;
+    for (auto& t : allMinerals)
+    {
+        int startX = 4 * BWAPI::Broodwar->self()->getStartLocation().x;
+        int startY = 4 * BWAPI::Broodwar->self()->getStartLocation().y;
+
+        int goalX = 4 * t.m_x;
         int goalY = 4 * t.m_y;
 
-        star.startSearch(BWAPI::WalkPosition(startX, startY), BWAPI::WalkPosition(goalX, goalY), bm, m_walkable, m_buildable);
+        distance = m_aStarPathFinding.startSearch(BWAPI::WalkPosition(startX, startY), BWAPI::WalkPosition(goalX, goalY), bm, m_walkable, m_buildable);
+        t.m_distance = distance;
+        if (distance > 0)
+        {
+            std::cout << "Distance: " << distance << std::endl;
+            std::cout << "X: " << goalX << "   Y: " << goalY << std::endl;
+            m_aStarPathFinding.m_baseLocations.push(t);
+        }
+        distance = 0;
+    }
+    sortedList = m_aStarPathFinding.m_baseLocations;
+    m_aStarPathFinding.m_baseLocations.m_allMinerals.clear();
+    for (size_t i = 0; i < m_aStarPathFinding.m_baseLocations.size(); i++)
+    {
+        m_aStarPathFinding.m_baseLocations.m_allMinerals.push_back(sortedList.top());
+        sortedList.pop();
     }
 }
 
