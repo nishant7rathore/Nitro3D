@@ -17,7 +17,6 @@ std::thread& StarterBot::getThreadHandle()
 StarterBot::StarterBot(ResourceManager& rm):m_strategyManager(StrategyManager(m_mapTools.m_walkable, m_mapTools.m_buildable))
 {
     m_resourceManager = rm;
-
 }
 
 bool isZerglingRush = false;
@@ -355,7 +354,7 @@ void StarterBot::buildAdditionalSupply()
     // Otherwise, we are going to build a supply provider
     const BWAPI::UnitType supplyProviderType = BWAPI::Broodwar->self()->getRace().getSupplyProvider();
 
-    bool startedBuilding = Tools::BuildBuilding(supplyProviderType, m_strategyManager.getBuildingStrategyManager(),myScout->getID());
+    bool startedBuilding = Tools::BuildBuilding(supplyProviderType, m_strategyManager.getBuildingStrategyManager(),0,myScout->getID());
     if (startedBuilding)
     {
         m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded() = true;
