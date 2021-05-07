@@ -47,11 +47,6 @@ int main(int argc, char * argv[])
 void PlayGame()
 {
     ResourceManager rm = ResourceManager();
-    //rm.calculateDistances();
-
-    //std::thread t1(&ResourceManager::calculateDistances, std::ref(rm));
-    //t1.join();
-
     StarterBot bot(rm);
 
 
