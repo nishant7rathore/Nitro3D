@@ -16,6 +16,7 @@ class StarterBot
 	ResourceManager m_resourceManager;
 	StrategyManager m_strategyManager;
 	EnemyInfo m_enemyInfo;
+	std::vector<int> m_visited;
 	BWAPI::Unit myScout;
 	BWAPI::Unit possibleEnemy = NULL;
 	BWAPI::Position enemyPos;

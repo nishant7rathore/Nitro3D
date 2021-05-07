@@ -11,22 +11,27 @@ std::string EnemyInfo::getRace()
 	return m_race;
 }
 
-BWAPI::TilePosition EnemyInfo::getEnemyBaseLocation()
+void EnemyInfo::setRace(std::string val)
+{
+	m_race = val;
+}
+
+BWAPI::Position EnemyInfo::getEnemyBaseLocation()
 {
 	return m_enemyBaseLocation;
 }
 
-BWAPI::TilePosition EnemyInfo::getEnemyStartLocation()
+BWAPI::Position EnemyInfo::getEnemyStartLocation()
 {
 	return m_enemyStartLocation;
 }
 
-void EnemyInfo::setEnemyBaseLocation(BWAPI::TilePosition val)
+void EnemyInfo::setEnemyBaseLocation(BWAPI::Position val)
 {
 	m_enemyBaseLocation = val;
 }
 
-void EnemyInfo::setEnemyStartLocation(BWAPI::TilePosition val)
+void EnemyInfo::setEnemyStartLocation(BWAPI::Position val)
 {
 	m_enemyStartLocation = val;
 }
@@ -38,7 +43,17 @@ int EnemyInfo::getTotalUnits()
 
 void EnemyInfo::updateTotalUnits(int val)
 {
-	m_totalUnits = val;
+	m_totalUnits += val;
+}
+
+std::vector<int> EnemyInfo::getVisited()
+{
+	return visited;
+}
+
+void EnemyInfo::updateVisited(int val)
+{
+	visited.push_back(val);
 }
 
 std::map<BWAPI::UnitType, int> EnemyInfo::getUnitCountMap()
@@ -46,9 +61,21 @@ std::map<BWAPI::UnitType, int> EnemyInfo::getUnitCountMap()
 	return m_unitCountMap;
 }
 
-void EnemyInfo::updateUnitCountMap(BWAPI::UnitType, int)
-{
-	std::cout << "do something with unit map" << std::endl;
+void EnemyInfo::updateUnitCountMap(BWAPI::UnitType unitType)
+{ 
+	// check if unitType exists in the map or not
+	std::map<BWAPI::UnitType, int>::iterator it = m_unitCountMap.find(unitType);
+
+	// key already present on the map
+	if (it != m_unitCountMap.end()) 
+	{
+		it->second++;    // increment map's value for key
+	}
+	// key not found
+	else 
+	{
+		m_unitCountMap.insert(std::make_pair(unitType, 1));
+	}
 }
 
 std::map<BWAPI::UnitType, int> EnemyInfo::getBuildingCountMap()
@@ -56,7 +83,19 @@ std::map<BWAPI::UnitType, int> EnemyInfo::getBuildingCountMap()
 	return m_buildingCountMap;
 }
 
-void EnemyInfo::updateBuildingCountMap(BWAPI::UnitType, int)
+void EnemyInfo::updateBuildingCountMap(BWAPI::UnitType unitType)
 {
-	std::cout << "do something with building map" << std::endl;
+	// check if unitType exists in the map or not
+	std::map<BWAPI::UnitType, int>::iterator it = m_buildingCountMap.find(unitType);
+
+	// key already present on the map
+	if (it != m_buildingCountMap.end())
+	{
+		it->second++;    // increment map's value for key
+	}
+	// key not found
+	else
+	{
+		m_buildingCountMap.insert(std::make_pair(unitType, 1));
+	}
 }

@@ -5,6 +5,7 @@
 #include "AStarPathFinding.h"
 #include <regex>
 #include "ReinforcementLearningManager.h"
+#include <algorithm>
 
 /**
 * Nishant Rathore 
@@ -42,6 +43,7 @@ void StarterBot::onStart()
     BWAPI::Broodwar->enableFlag(BWAPI::Flag::UserInput);
 
     myScout = Tools::GetUnitOfType(BWAPI::Broodwar->self()->getRace().getWorker());
+    m_strategyManager.getBuildingStrategyManager().setWorkerID(myScout->getID());
 
 
     //TODO: need to ask Dave about this flag
@@ -103,7 +105,7 @@ BWAPI::TilePosition nexusTilePos;
 void StarterBot::doScouting()
 {
     auto& startLocations = BWAPI::Broodwar->getStartLocations();
-    //BWAPI::Broodwar->drawCircleMap(myScout->getPosition(), 128, BWAPI::Colors::Red, true);
+    //BWAPI::Broodwar->drawCircleMap(myScout->getPosition(), 64, BWAPI::Colors::Red, true);
     if (!enemyFound) {
         for (BWAPI::TilePosition tp : startLocations)
         {
@@ -116,12 +118,14 @@ void StarterBot::doScouting()
                 myScout->move(pos);
                 if (myScout->getClosestUnit(BWAPI::Filter::IsEnemy, 256))
                 {
-                    possibleEnemy = myScout->getClosestUnit(BWAPI::Filter::IsEnemy, 256);
+                    possibleEnemy = myScout->getClosestUnit(BWAPI::Filter::IsEnemy, 64);
                 }
 
                 if (possibleEnemy || BWAPI::Broodwar->enemy()->getUnits().size() > 0)
                 {
                     enemyPos = pos;
+                    m_enemyInfo.setEnemyStartLocation(pos);
+                    BWAPI::Broodwar->drawCircleMap(pos, 256, BWAPI::Colors::Red, true);
                     enemyFound = true;
                     std::cout << "(" << enemyPos.x << ", " << enemyPos.y << ")" << std::endl;
                     scoutingComplete = true;
@@ -140,7 +144,7 @@ void StarterBot::doScouting()
 void StarterBot::storeEnemyInfo()
 {
     if (enemyFound) {
-        std::cout << "Race is: " << BWAPI::Broodwar->enemy()->getRace() << std::endl;
+        //std::cout << "Race is: " << BWAPI::Broodwar->enemy()->getRace() << std::endl;
     }
 }
 
@@ -546,6 +550,7 @@ void StarterBot::buildArmy()
 
     if (zealots.size() == 0) isScoutingAllowed = false;
 
+
     if (isUnderAttack)
     {
         isUnderAttack = false;
@@ -571,48 +576,29 @@ void StarterBot::buildArmy()
     }
     else if (!isUnderAttack && isScoutingAllowed)
     {
-        bool isScoutingCompleted = true;
-
+        if (m_enemyInfo.getEnemyBaseLocation()) 
+        {
+            zealots.move(m_enemyInfo.getEnemyBaseLocation());
+        }
+        else if (m_enemyInfo.getEnemyStartLocation())
+        {
+            zealots.move(m_enemyInfo.getEnemyStartLocation());
+        }
         //isUnderAttack = false;
-        for (BWAPI::TilePosition pos : BWAPI::Broodwar->getStartLocations())
+        for (auto it = zealots.begin(); it != zealots.end(); it++)
         {
-            if (!BWAPI::Broodwar->isExplored(pos))
+            BWAPI::Unit u = *it;
+            if (u && u->exists())
             {
-                for (auto it = zealots.begin(); it != zealots.end(); it++)
+                BWAPI::Unit enemyUnit = u->getClosestUnit(BWAPI::Filter::IsEnemy, 512);
+                if (enemyUnit && (u->getLastCommand().getType() != BWAPI::UnitCommandTypes::Attack_Unit || (u->getLastCommand().getTarget() && !u->getLastCommand().getTarget()->exists() && u->getLastCommand().getTarget()->getID() != enemyUnit->getID())))
                 {
-                    BWAPI::Unit u = *it;
-                    if (u && u->exists())
-                    {
-                        BWAPI::Unit enemyUnit = u->getClosestUnit(BWAPI::Filter::IsEnemy, 512);
-                        if (enemyUnit && (u->getLastCommand().getType() != BWAPI::UnitCommandTypes::Attack_Unit || (u->getLastCommand().getTarget() && !u->getLastCommand().getTarget()->exists() && u->getLastCommand().getTarget()->getID() != enemyUnit->getID())))
-                        {
-                            u->attack(enemyUnit);
-                            isUnderAttack = true;
-                        }
-                    }
+                    u->attack(enemyUnit);
+                    isUnderAttack = true;
                 }
-
             }
-            if (isUnderAttack)
-            {
-                break;
-            }
-            else if (!BWAPI::Broodwar->isExplored(pos))
-            {
-                zealots.move(BWAPI::Position(pos));
-                isScoutingCompleted = false;
-            }
-
         }
-
-        if (!isScoutingCompleted)
-        {
-            isScoutingAllowed = true;
-        }
-
     }
-
-
 }
 
 // Called whenever a unit is destroyed, with a pointer to the unit
@@ -928,24 +914,49 @@ void StarterBot::onUnitShow(BWAPI::Unit unit)
 
 void StarterBot::onUnitDiscover(BWAPI::Unit unit)
 {
-    if (unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()) && unit->getType() == BWAPI::UnitTypes::Protoss_Nexus)
+    if (unit->getPlayer()->isEnemy(BWAPI::Broodwar->self())) 
     {
-        std::cout << "Protoss Base Found" << std::endl;
-        std::cout << "All current enemy info stored" << std::endl;
+        if (unit->getType() == BWAPI::UnitTypes::Protoss_Nexus)
+        {
+            std::cout << "Protoss Base Found" << std::endl;
+            m_enemyInfo.setRace("Protoss");
+            m_enemyInfo.setEnemyBaseLocation(unit->getPosition());
+        }
 
-    }
-    if (unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()) && unit->getType() == BWAPI::UnitTypes::Terran_Command_Center)
-    {
-        std::cout << "Terran Base Found" << std::endl;
-        std::cout << "All current enemy info stored" << std::endl;
+        if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center)
+        {
+            std::cout << "Terran Base Found" << std::endl;
+            m_enemyInfo.setRace("Terran");
+            m_enemyInfo.setEnemyBaseLocation(unit->getPosition());
+        }
 
-    }
-    if (unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()) && unit->getType() == BWAPI::UnitTypes::Zerg_Hatchery)
-    {
-        std::cout << "Zerg Base Found" << std::endl;
-        std::cout << "All current enemy info stored" << std::endl;
+        if (unit->getType() == BWAPI::UnitTypes::Zerg_Hatchery)
+        {
+            std::cout << "Zerg Base Found" << std::endl;
+            m_enemyInfo.setRace("Zerg");
+            m_enemyInfo.setEnemyBaseLocation(unit->getPosition());
+        }
+
+        m_visited = m_enemyInfo.getVisited();
+        if (std::find(m_visited.begin(), m_visited.end(), unit->getID()) != m_visited.end()) 
+        {
+            std::cout << "Unit already stored" << std::endl;
+        }
+        else 
+        {
+            m_enemyInfo.updateVisited(unit->getID());
+            if (unit->getType() = BWAPI::UnitTypes::Men) 
+            {
+                m_enemyInfo.updateUnitCountMap(unit->getType());
+            }
+            if (unit->getType() = BWAPI::UnitTypes::Buildings)
+            {
+                m_enemyInfo.updateBuildingCountMap(unit->getType());
+            }
+        }
     }
 }
+
 
 // Called whenever a unit gets hidden, with a pointer to the destroyed unit
 // This is usually triggered when units enter the fog of war and are no longer visible
