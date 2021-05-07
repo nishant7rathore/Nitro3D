@@ -14,6 +14,7 @@
     <ClInclude Include="..\src\AStarPathFinding.h" />
     <ClInclude Include="..\src\BaseManager.h" />
     <ClInclude Include="..\src\BuildingStrategyManager.h" />
+    <ClInclude Include="..\src\EnemyInfo.h" />
     <ClInclude Include="..\src\Grid.hpp" />
     <ClInclude Include="..\src\MapTools.h" />
     <ClInclude Include="..\src\ResourceManager.h" />
@@ -27,6 +28,7 @@
     <ClCompile Include="..\src\AStarPathFinding.cpp" />
     <ClCompile Include="..\src\BaseManager.cpp" />
     <ClCompile Include="..\src\BuildingStrategyManager.cpp" />
+    <ClCompile Include="..\src\EnemyInfo.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\MapTools.cpp" />
     <ClCompile Include="..\src\ResourceManager.cpp" />

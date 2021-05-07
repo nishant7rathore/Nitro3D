@@ -7,6 +7,7 @@
 #include <mutex>
 #include <vector>
 #include "StrategyManager.h"
+#include "EnemyInfo.h"
 
 
 class StarterBot
@@ -14,6 +15,7 @@ class StarterBot
     MapTools m_mapTools;
 	ResourceManager m_resourceManager;
 	StrategyManager m_strategyManager;
+	EnemyInfo m_enemyInfo;
 	BWAPI::Unit myScout;
 	BWAPI::Unit possibleEnemy = NULL;
 	BWAPI::Position enemyPos;
@@ -37,11 +39,10 @@ public:
     StarterBot(ResourceManager& rm);
 
 	// helper functions to get you started with bot programming and learn the API
-    void sendIdleWorkersToMinerals();
 	void doScouting();
+    void sendIdleWorkersToMinerals();
 	void storeEnemyInfo();
 	void doUpgrades();
-	void doScouting();
 	void findAdditionalBases();
     void trainAdditionalWorkers();
     void buildAdditionalSupply();

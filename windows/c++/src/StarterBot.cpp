@@ -46,6 +46,7 @@ void StarterBot::onStart()
     // Call MapTools OnStart
     //t1 = std::thread(&MapTools::onStart,std::ref(m_mapTools),std::ref(m_resourceManager));
     m_mapTools.onStart(m_resourceManager,m_strategyManager.getBuildingStrategyManager());
+    m_enemyInfo = EnemyInfo();
     //m_strategyManager.getBuildingStrategyManager().findCannonBuildingLocation(0, m_mapTools.m_walkable, m_mapTools.m_buildable);
 }
 
@@ -69,8 +70,6 @@ void StarterBot::onFrame()
     //Send our idle workers to mine minerals so they don't just stand there
     sendIdleWorkersToMinerals();
 
-    doScouting();
-
     // Build more supply if we are going to run out soon
     buildAdditionalSupply();
 
@@ -90,7 +89,6 @@ void StarterBot::onFrame()
 
     // Draw some relevent information to the screen to help us debug the bot
     drawDebugInformation();
-
 }
 
 BWAPI::TilePosition baseLocationTilePos = BWAPI::TilePositions::Invalid;
@@ -99,7 +97,7 @@ BWAPI::TilePosition nexusTilePos;
 void StarterBot::doScouting()
 {
     auto& startLocations = BWAPI::Broodwar->getStartLocations();
-    BWAPI::Broodwar->drawCircleMap(myScout->getPosition(), 128, BWAPI::Colors::Red, true);
+    //BWAPI::Broodwar->drawCircleMap(myScout->getPosition(), 128, BWAPI::Colors::Red, true);
     if (!enemyFound) {
         for (BWAPI::TilePosition tp : startLocations)
         {
@@ -107,10 +105,6 @@ void StarterBot::doScouting()
             {
                 if (BWAPI::Broodwar->isExplored(tp)) { continue; }
                 if (BWAPI::Broodwar->self()->getStartLocation() == tp) { continue; }
-                if (!myScout->isIdle())
-                {
-                    continue;
-                }
 
                 BWAPI::Position pos(tp);
                 myScout->move(pos);
@@ -354,7 +348,7 @@ void StarterBot::buildAdditionalSupply()
     // Otherwise, we are going to build a supply provider
     const BWAPI::UnitType supplyProviderType = BWAPI::Broodwar->self()->getRace().getSupplyProvider();
 
-    bool startedBuilding = Tools::BuildBuilding(supplyProviderType, m_strategyManager.getBuildingStrategyManager(),0,myScout->getID());
+    bool startedBuilding = Tools::BuildBuilding(supplyProviderType, m_strategyManager.getBuildingStrategyManager(), 0, m_strategyManager.getBaseManager());
     if (startedBuilding)
     {
         m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded() = true;
@@ -925,7 +919,23 @@ void StarterBot::onUnitShow(BWAPI::Unit unit)
 
 void StarterBot::onUnitDiscover(BWAPI::Unit unit)
 {
-    
+    if (unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()) && unit->getType() == BWAPI::UnitTypes::Protoss_Nexus)
+    {
+        std::cout << "Protoss Base Found" << std::endl;
+        std::cout << "All current enemy info stored" << std::endl;
+
+    }
+    if (unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()) && unit->getType() == BWAPI::UnitTypes::Terran_Command_Center)
+    {
+        std::cout << "Terran Base Found" << std::endl;
+        std::cout << "All current enemy info stored" << std::endl;
+
+    }
+    if (unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()) && unit->getType() == BWAPI::UnitTypes::Zerg_Hatchery)
+    {
+        std::cout << "Zerg Base Found" << std::endl;
+        std::cout << "All current enemy info stored" << std::endl;
+    }
 }
 
 // Called whenever a unit gets hidden, with a pointer to the destroyed unit
