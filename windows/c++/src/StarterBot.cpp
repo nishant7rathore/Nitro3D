@@ -45,8 +45,9 @@ void StarterBot::onStart()
     myScout = Tools::GetUnitOfType(BWAPI::Broodwar->self()->getRace().getWorker());
 
 
+
     //TODO: need to ask Dave about this flag
-    //BWAPI::Broodwar->enableFlag(BWAPI::Flag::CompleteMapInformation);
+    BWAPI::Broodwar->enableFlag(BWAPI::Flag::CompleteMapInformation);
 
     // Call MapTools OnStart
     //t1 = std::thread(&MapTools::onStart,std::ref(m_mapTools),std::ref(m_resourceManager));
@@ -216,10 +217,6 @@ void StarterBot::sendIdleWorkersToMinerals()
     if (isZerglingRush)
     {
         BWAPI::Unit enemyUnit = nullptr;
-        //for (size_t i=0; i< workers.size(); i++)
-        //{
-        //  
-        //}
 
         enemyUnit = workers.getClosestUnit(BWAPI::Filter::IsEnemy, 1024);
         if ((!lastZergling && enemyUnit) || (enemyUnit && lastZergling && enemyUnit->getID() != lastZergling->getID()))
@@ -455,11 +452,8 @@ void StarterBot::buildBuildings()
 
             if (built)
             {
-                //numUnits = Tools::CountBuildingUnitsOfType(BWAPI::UnitTypes::Protoss_Gateway, BWAPI::Broodwar->self()->getUnits());
-                //std::cout << "Gateway Built " << numUnits << std::endl;
                 BWAPI::Broodwar->printf("Started Building %s", buildOrderVector[i].getName().c_str());
                 break;
-                //m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Gateway]= numUnits;
             }
         }
     }
@@ -506,20 +500,12 @@ void StarterBot::buildBuildings()
                 }
 
 
-                //if (it->first == BWAPI::UnitTypes::Protoss_Pylon && m_strategyManager.getBaseManager().getWorkerFromBase(1))
-                //{
-                //    builder = m_strategyManager.getBaseManager().getWorkerFromBase(1);
-                //}
-
                 Tools::BuildBuilding(it->first, m_strategyManager.getBuildingStrategyManager(), 1, m_strategyManager.getBaseManager());
 
                 if (built)
                 {
-                    //numUnits = Tools::CountBuildingUnitsOfType(BWAPI::UnitTypes::Protoss_Gateway, BWAPI::Broodwar->self()->getUnits());
-                    //std::cout << "Gateway Built " << numUnits << std::endl;
                     BWAPI::Broodwar->printf("Started Base 2 Building %s", it->first.getName().c_str());
                     break;
-                    //m_strategyManager.getUnitTypesMap()[BWAPI::UnitTypes::Protoss_Gateway]= numUnits;
                 }
                 else
                 {
@@ -536,7 +522,9 @@ int lastEnemyUnitID = -1;
 
 void StarterBot::buildArmy()
 {
-    //if (m_strategyManager.getBuildingStrategyManager().isBuildingBuiltNeeded()) return;
+
+    std::cout<<BWAPI::Broodwar->enemy()->getUnits().size()<< std::endl;
+
     if (m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded()) return;
     if (m_strategyManager.getBuildingStrategyManager().getWorkerID() != -1) return;
 
@@ -641,17 +629,6 @@ void StarterBot::onUnitDestroy(BWAPI::Unit unit)
             defenders.erase(unit);
         }
 
-        //for (auto it = defenders.begin(); it != defenders.end(); it++)
-        //{
-        //    BWAPI::Unit u = *it;
-        //    if (unit->getID() == u->getID()) defenders.erase(*it);
-        //}
-
-        //for (auto it = zealots.begin(); it != zealots.end(); it++)
-        //{
-        //    BWAPI::Unit u = *it;
-        //    if (unit->getID() == u->getID()) zealots.erase(*it);
-        //}
 
     }
     if (unit->getPlayer()->isEnemy(BWAPI::Broodwar->self()))
@@ -710,21 +687,6 @@ void StarterBot::onSendText(std::string text)
     {
         m_mapTools.toggleDraw();
     }
-
-    //std::regex e("([0-9]+,[0-9]+)");
-
-    //if (std::regex_match(text,e))
-    {
-        //char* cstr = new char(text.length()+1);
-        //strcpy(cstr,text.c_str());
-       // std::vector<char> cstr(text.c_str(), text.c_str()+text.size()+1);
-        //std::cout << strtok(cstr.data(),",") << std::endl;
-        //int n1 = atoi(strtok(cstr.data(), ","));
-        //int n2 = atoi(strtok(NULL, ","));
-        //AStarPathFinding star = AStarPathFinding();
-        //star.startSearch(BWAPI::Broodwar->self()->getStartLocation(), BWAPI::TilePosition(n1,n2), m_strategyManager.getBuildingStrategyManager(), m_mapTools.m_walkable, m_mapTools.m_buildable);
-    }
-
 
     BWAPI::Broodwar->sendText("%s", text.c_str());
 }
@@ -831,7 +793,7 @@ void StarterBot::onUnitComplete(BWAPI::Unit unit)
     {
         if (!BWAPI::Broodwar->isExplored(pos))
         {
-            worker->move(BWAPI::Position(pos));
+            if(worker->hasPath(BWAPI::Position(pos))) worker->move(BWAPI::Position(pos));
             break;
         }
     }

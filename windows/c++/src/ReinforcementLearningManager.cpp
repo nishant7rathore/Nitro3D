@@ -9,7 +9,7 @@
 ResultsSaver::ResultsSaver(StrategyManager& strategyManager) :m_stratManager(strategyManager)
 {
 	const auto clock = std::chrono::system_clock::now();
-	m_fileName = "Results_"+std::to_string(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count())+".txt";
+	m_fileName = "Results.txt";//_"+std::to_string(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count())+".txt";
 	initializeBandits();
 }
 

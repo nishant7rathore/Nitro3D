@@ -99,8 +99,6 @@ void MapTools::getBaseLocations(std::vector<Resource>& allMinerals, BuildingStra
         t.m_distance = distance;
         if (distance > 0)
         {
-            std::cout << "Distance: " << distance << std::endl;
-            std::cout << "X: " << goalX << "   Y: " << goalY << std::endl;
             m_aStarPathFinding.m_baseLocations.push(t);
         }
         distance = 0;

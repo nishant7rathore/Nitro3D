@@ -136,19 +136,10 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
 
     }
 
-    //else if (building == BWAPI::UnitTypes::Protoss_Assimilator)
-    //{
-    //    BWAPI::TilePosition tempPos = BWAPI::Broodwar->getBuildLocation(building, m_lastBuiltLocationMap[base]);
-    //    if (tempPos.isValid())
-    //    {
-    //        m_lastBuiltLocationMap[base] = tempPos;
-    //    }
-    //}
 
-
-    std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
-    std::chrono::system_clock::duration dtn = tp.time_since_epoch();
-    srand((unsigned int)dtn.count());
+    //std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
+    //std::chrono::system_clock::duration dtn = tp.time_since_epoch();
+    //srand((unsigned int)dtn.count());
 
     openList.push_back(BFSNode(lastBuiltLocation.x, lastBuiltLocation.y, 0, nullptr));
     distanceMapClosedList.get(lastBuiltLocation.x, lastBuiltLocation.y) = 0;
@@ -160,9 +151,6 @@ BWAPI::TilePosition BuildingStrategyManager::getBuildingLocation(BWAPI::UnitType
     for (size_t i = 0; i < size; i++)
     {
         BFSNode node = openList[i];
-
-        ////it = closedList.find(std::to_string(node.x) + std::to_string(node.y));
-        //if (distanceMapClosedList.get(node.x,node.y) > 0) continue;
 
 
         for (size_t d = 0; d < 8; d++)
@@ -226,7 +214,7 @@ bool BuildingStrategyManager::isSafeToPlaceHere(BWAPI::UnitType building, BWAPI:
         }
     }
 
-    return isSafe; //&& BWAPI::Broodwar->canBuildHere(childPos, building);
+    return isSafe; 
 }
 
 int BuildingStrategyManager::getNumberOfBuildings(BWAPI::UnitType building)
@@ -290,7 +278,6 @@ void BuildingStrategyManager::findCannonBuildingLocation(int base)
     this->m_cannonLocations[base].clear();
     dfsOpenList.clear();
 
-    std::map<std::string, bool> closedList2;
     distanceMapClosedList = Grid<int>(4*m_walkable.width(), 4*m_walkable.height(), -1);
 
     BWAPI::TilePosition& lastBuiltLocation = m_lastBuiltLocationMap[base];
@@ -298,9 +285,6 @@ void BuildingStrategyManager::findCannonBuildingLocation(int base)
     dfsOpenList.push_back(std::make_shared<DFSNode>(4*lastBuiltLocation.x, 4*lastBuiltLocation.y, 0, nullptr));
     distanceMapClosedList.get(4*lastBuiltLocation.x, 4*lastBuiltLocation.y) = 0;
 
-    std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
-    std::chrono::system_clock::duration dtn = tp.time_since_epoch();
-    srand((unsigned int)dtn.count());
 
     size_t size = dfsOpenList.size();
     size_t i = size - 1;
@@ -308,28 +292,13 @@ void BuildingStrategyManager::findCannonBuildingLocation(int base)
     {
         std::shared_ptr<DFSNode> node = dfsOpenList[i];
 
-        /*if (*node)
-        {
-            i++;
-            continue;
-        }*/
-
-        //it = closedList.find(std::to_string(node.x) + std::to_string(node.y));
-        
-        //if (distanceMapClosedList.get(node->x,node->y) > 0)
-        //{
-        //    i++;
-        //    continue;
-        //}
-
         BWAPI::TilePosition childPos = BWAPI::TilePosition(node->x/4, node->y/4);
 
         int tileHeight = BWAPI::Broodwar->getGroundHeight(childPos);
         int baseTileHeight = BWAPI::Broodwar->getGroundHeight(BWAPI::Broodwar->self()->getStartLocation());
 
-        if (BWAPI::Broodwar->isWalkable(BWAPI::WalkPosition(node->x, node->y)) && ((node->position >= 160)))
+        if (BWAPI::Broodwar->isWalkable(BWAPI::WalkPosition(node->x, node->y)) && ((node->position >= 240)))
         {
-            std::cout << " 90 Position " <<std::to_string(node->x) + " : " + std::to_string(node->y);
 
             AStarPathFinding aStar = AStarPathFinding();
 
@@ -338,10 +307,8 @@ void BuildingStrategyManager::findCannonBuildingLocation(int base)
 
             int distance = aStar.startSearch(BWAPI::WalkPosition(node->x, node->y), BWAPI::WalkPosition(goalX, goalY), *this, m_walkable, m_buildable);
             int d = 0;
-            //childPos = BWAPI::TilePosition(x / 4, y / 4);
-            while (node && distance > 2000)
+            while (node && distance > 1000)
             {
-                //std::cout << std::to_string(node->x) + " : " + std::to_string(node->y) << "  ";
                 distance = aStar.startSearch(BWAPI::WalkPosition(4 * childPos.x, 4 * childPos.y), BWAPI::WalkPosition(goalX, goalY), *this, m_walkable, m_buildable);
                 node = node->parent;
                 if(node) childPos = BWAPI::TilePosition(node->x / 4, node->y / 4);
@@ -357,24 +324,18 @@ void BuildingStrategyManager::findCannonBuildingLocation(int base)
                     {
                         this->m_cannonLocations[base].push_back(childPos);
                     }
-                    //std::cout << std::to_string(childPos.x) + " : " + std::to_string(childPos.y) << "  ";
                 }
                 d++;
                 node = node->parent;
             }
-            std::cout << std::endl;
             return;
         }
 
         for (size_t d = 0; d < 4; d++)
         {
-            int seed = rand();
-            size_t index = Lehmer2(seed, d) % 8;
 
             int x = node->x + m_directions[d].x;
             int y = node->y + m_directions[d].y;
-
-           // it = closedList.find(std::to_string(x) + std::to_string(y));
 
             
             BWAPI::WalkPosition newChildPos = BWAPI::WalkPosition(x, y);
@@ -383,55 +344,6 @@ void BuildingStrategyManager::findCannonBuildingLocation(int base)
                 continue;
             }
 
-       
-
-           /* if (BWAPI::Broodwar->canBuildHere(newChildPos,BWAPI::UnitTypes::Protoss_Pylon,nullptr,true) && isSafeToPlaceHere(BWAPI::UnitTypes::Protoss_Pylon, newChildPos))
-            {
-                this->m_cannonLocations[base].push_back(newChildPos);
-                return;
-            }*/
-
-
-
-            //bool isBuildable = m_buildable.get(x, y);
-
-            //bool isSafeToPlace = isSafeToPlaceHere(BWAPI::UnitTypes::Protoss_Photon_Cannon, childPos);
-
-            //closedList.emplace(std::to_string(childPos.x) + std::to_string(childPos.y), true);
-
-            //if (newChildPos.isValid() && !BWAPI::Broodwar->isVisible(newChildPos) && m_walkable.get(x,y))
-            //{
-            //    
-            //    //if (this->m_cannonLocations[base].size() >= 4)
-            //    //{
-            //    //    return;
-            //    //}
-            //    std::shared_ptr<DFSNode> parentNode = node;
-            //    if (node->position > 25)
-            //    {
-            //        while (node)
-            //        {
-            //            node = node->parent;
-            //            if (node && BWAPI::Broodwar->canBuildHere(BWAPI::TilePosition(node->x, node->y), BWAPI::UnitTypes::Protoss_Pylon, nullptr, false))
-            //            {
-            //                this->m_cannonLocations[base].push_back(BWAPI::TilePosition(node->x, node->y));
-            //            }
-            //        }
-            //        if (this->m_cannonLocations[base].size() > 10)
-            //        {
-            //            return;
-            //        }
-            //        node = parentNode;
-            //    }
-            //}
-
-
-           
-
-            //if (!m_walkable.get(x, y) || !m_walkable.get(childPos.x, childPos.y))
-            //{
-            //    continue;
-            //}
             if (distanceMapClosedList.get(x,y) < 0 && BWAPI::Broodwar->isWalkable(BWAPI::WalkPosition(x, y)))
             {
                 int childNodeDistance = node->position + 1;
@@ -458,7 +370,6 @@ BWAPI::TilePosition BuildingStrategyManager::getCannonPosition(int base, BWAPI::
         if (isSafeToPlaceHere(BWAPI::UnitTypes::Protoss_Pylon, *it))
         {
             retPos = *it;
-            //m_cannonLocations[base].erase((it+1).base());
             break;
         }
         else
