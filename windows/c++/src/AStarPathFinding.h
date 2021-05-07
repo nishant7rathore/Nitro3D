@@ -1,13 +1,13 @@
-#include "MapTools.h"
 #include "ResourceManager.h"
 #include <queue>
-
+#include <BWAPI.h>
+#include "BuildingStrategyManager.h"
 
 #pragma once
 //AStar Node
 struct AStarNode
 {
-    BWAPI::TilePosition tilePos;
+    BWAPI::WalkPosition walkPos;
     //double distance;
     double gCost;
     double hCost;
@@ -15,15 +15,15 @@ struct AStarNode
 
     AStarNode() 
     {
-        this->tilePos = BWAPI::TilePositions::Invalid;
-        this->gCost = -1;
-        this->hCost = -1;
+        this->walkPos = BWAPI::WalkPositions::Invalid;
+        this->gCost = DBL_MAX;
+        this->hCost = DBL_MAX;
         this->parent = nullptr;
     };
 
-    AStarNode(BWAPI::TilePosition tilePos, AStarNode* parent, double gCost, double hCost)
+    AStarNode(BWAPI::WalkPosition tilePos, AStarNode* parent, double gCost, double hCost)
     {
-        this->tilePos = tilePos;
+        this->walkPos = tilePos;
         //this->distance = position;
         this->parent = parent;
         this->gCost = gCost;
@@ -41,8 +41,28 @@ public:
 
     bool operator() (const AStarNode& n1, const AStarNode& n2) const
     {
-        return (n1.gCost + n1.hCost) < (n2.gCost + n2.hCost);
+        return (n1.gCost + n1.hCost) > (n2.gCost + n2.hCost);
     }
+};
+
+class ResourceDistanceComparision
+{
+
+public:
+
+    ResourceDistanceComparision() {};
+
+    bool operator() (const Resource& r1, const Resource& r2) const
+    {
+        return r1.m_distance > r2.m_distance;
+    }
+};
+
+struct ResourcePriorityQueue : std::priority_queue < Resource, std::vector<Resource>, ResourceDistanceComparision>
+{
+    std::vector<Resource> m_allMinerals;
+    auto begin() const { return m_allMinerals.begin(); }
+    auto end() const { return m_allMinerals.end(); }
 };
 
 class AStarPathFinding
@@ -50,20 +70,16 @@ class AStarPathFinding
     AStarNode m_startNode;
     AStarNode m_goalNode;
 
-    int m_actionCost[8] = {100,100,100,100,141,141,141,141};
+    double m_actionCost[8] = {8,8,8,8,11.314,11.314,11.314,11.314};
 
 public:
 
     AStarPathFinding() {};
-    //AStarPathFinding(AStarNode startNode, AStarNode goalNode)
-    //{
-    //    m_startNode = startNode;
-    //    m_goalNode = goalNode;
-    //}
+    AStarPathFinding(std::vector<Resource>& resources);
     std::priority_queue<AStarNode,std::vector<AStarNode>,NodeCostComparion> m_openList;
-    std::map<std::string,bool> m_closedList;
+    Grid<int> m_closedList;
     Grid<AStarNode> m_openListGrid;
     double estimateCost(AStarNode n1, AStarNode n2);
-    void startSearch(BWAPI::TilePosition& startPos, std::vector<Resource>& vespeneGeyserList, BuildingStrategyManager& bm, Grid<int>& walkable, Grid<int>& buildable);
-
+    int startSearch(BWAPI::WalkPosition& startPos, BWAPI::WalkPosition& goalPos, BuildingStrategyManager& bm, Grid<int>& walkable, Grid<int>& buildable);
+    ResourcePriorityQueue m_baseLocations;
 };

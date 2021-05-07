@@ -1,6 +1,5 @@
 #include "MapTools.h"
 #include "ResourceManager.h"
-#include "AStarPathFinding.h"
 
 #include <iostream>
 #include <sstream>
@@ -8,15 +7,15 @@
 #include <array>
 
 // constructor for MapTools
-MapTools::MapTools()
+MapTools::MapTools() noexcept
 {
     
 }
 
 void MapTools::onStart(ResourceManager& rm, BuildingStrategyManager& bm)
 {
-    m_allMinerals = Tools::GetAllMinerals(BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
-    m_baseLocations = Tools::GetBaseLocationsList(m_allMinerals,bm);
+    std::vector<Resource> allMinerals = Tools::GetAllMinerals(BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
+    m_aStarPathFinding = AStarPathFinding(allMinerals);
 
     m_width          = BWAPI::Broodwar->mapWidth();
     m_height         = BWAPI::Broodwar->mapHeight();
@@ -26,6 +25,7 @@ void MapTools::onStart(ResourceManager& rm, BuildingStrategyManager& bm)
     m_depotBuildable = Grid<int>(m_width, m_height, 0);
     m_lastSeen       = Grid<int>(m_width, m_height, 0);
 
+
     // Set the boolean grid data from the Map
     for (int x(0); x < m_width; ++x)
     {
@@ -34,9 +34,9 @@ void MapTools::onStart(ResourceManager& rm, BuildingStrategyManager& bm)
             m_buildable.set(x, y, canBuild(x, y));
             m_depotBuildable.set(x, y, canBuild(x, y));
             m_walkable.set(x, y, m_buildable.get(x,y) || canWalk(x, y));
-            BWAPI::Position pos(BWAPI::TilePosition(x, y));
-            Resource closestMineral = Tools::GetClosestResourceMineralToUnit(pos);
-            Resource closestGeyeser = Tools::GetClosestGeyserToUnit(pos);
+            const BWAPI::Position pos(BWAPI::TilePosition(x, y));
+            const Resource closestMineral = Tools::GetClosestResourceMineralToUnit(pos);
+            const Resource closestGeyeser = Tools::GetClosestGeyserToUnit(pos);
             rm.setMineralResource(x, y, closestMineral);
             rm.setRefineryResource(x, y, closestGeyeser);
         }
@@ -77,10 +77,41 @@ void MapTools::onStart(ResourceManager& rm, BuildingStrategyManager& bm)
         }
     }
 
-    //AStar star = AStar();
-    //star.estimateCost(AStarNode(BWAPI::TilePosition(1, 0), nullptr, 100, 100), AStarNode(BWAPI::TilePosition(0, 1), nullptr, 100, 100));
+
     //std::cout << BWAPI::TilePosition(1, 0) << std::endl;
-    
+
+    getBaseLocations(allMinerals,bm);
+}
+
+void MapTools::getBaseLocations(std::vector<Resource>& allMinerals, BuildingStrategyManager& bm)
+{
+    int distance = 0;
+    ResourcePriorityQueue sortedList;
+    for (auto& t : allMinerals)
+    {
+        int startX = 4 * BWAPI::Broodwar->self()->getStartLocation().x;
+        int startY = 4 * BWAPI::Broodwar->self()->getStartLocation().y;
+
+        int goalX = 4 * t.m_x;
+        int goalY = 4 * t.m_y;
+
+        distance = m_aStarPathFinding.startSearch(BWAPI::WalkPosition(startX, startY), BWAPI::WalkPosition(goalX, goalY), bm, m_walkable, m_buildable);
+        t.m_distance = distance;
+        if (distance > 0)
+        {
+            std::cout << "Distance: " << distance << std::endl;
+            std::cout << "X: " << goalX << "   Y: " << goalY << std::endl;
+            m_aStarPathFinding.m_baseLocations.push(t);
+        }
+        distance = 0;
+    }
+    sortedList = m_aStarPathFinding.m_baseLocations;
+    m_aStarPathFinding.m_baseLocations.m_allMinerals.clear();
+    for (size_t i = 0; i < m_aStarPathFinding.m_baseLocations.size(); i++)
+    {
+        m_aStarPathFinding.m_baseLocations.m_allMinerals.push_back(sortedList.top());
+        sortedList.pop();
+    }
 }
 
 void MapTools::onFrame()
@@ -261,12 +292,12 @@ void MapTools::draw() const
     const int ex = sx + 20;
     const int ey = sy + 15;
 
-    for (int i = 0; i < m_width; ++i)
+    for (int i = sx; i < ex; ++i)
     {
-        for (int j = 0; j < m_height; ++j)
+        for (int j = sy; j < ey; ++j)
         {
             const BWAPI::TilePosition tilePos(i, j);
-            BWAPI::Broodwar->drawTextScreen(BWAPI::Position(tilePos).x+10, BWAPI::Position(tilePos).y + 10,(std::to_string(tilePos.x)+std::to_string(tilePos.y)).c_str(), '\x04');
+            BWAPI::Broodwar->drawTextScreen(BWAPI::Position(tilePos).x+10-sx, BWAPI::Position(tilePos).y + 10 -sy,(std::to_string(i)+std::to_string(j)).c_str(), '\x04');
         }
     }
 

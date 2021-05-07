@@ -1,4 +1,5 @@
 #include "Tools.h"
+#include "AStarPathFinding.h"
 
 BWAPI::TilePosition lastSetPylonTilePosition = BWAPI::TilePositions::Invalid;
 
@@ -31,12 +32,14 @@ Resource Tools::GetClosestResourceMineralToUnit(BWAPI::Position p)
     {
         if (!u->getType().isMineralField()) continue;
 
+        if (u->getResources() < 10) continue;
+
         if (!closestUnit || u->getDistance(p) < closestUnit->getDistance(p))
         {
             closestUnit = u;
         }
     }
-    return Resource(closestUnit->getID(),closestUnit->getTilePosition().x, closestUnit->getTilePosition().y, closestUnit->getInitialResources(), false);
+    return Resource(closestUnit->getID(),closestUnit->getTilePosition().x, closestUnit->getTilePosition().y, closestUnit->getInitialResources(), closestUnit->getDistance(p), false);
 }
 
 
@@ -48,7 +51,7 @@ std::vector<Resource> Tools::GetAllMinerals(BWAPI::Position p)
     {
         if (unit->getType() != BWAPI::UnitTypes::Resource_Vespene_Geyser) continue;
 
-        allMinerals.push_back(Resource(unit->getID(), unit->getTilePosition().x, unit->getTilePosition().y, unit->getInitialResources(), false));
+        allMinerals.push_back(Resource(unit->getID(), unit->getTilePosition().x, unit->getTilePosition().y, unit->getInitialResources(), unit->getDistance(p), false));
     }
 
     return allMinerals;
@@ -57,11 +60,8 @@ std::vector<Resource> Tools::GetAllMinerals(BWAPI::Position p)
 std::vector<BWAPI::TilePosition> Tools::GetBaseLocationsList(std::vector<Resource>& allMineralsList, BuildingStrategyManager& bm)
 {
     BWAPI::Unit resourceDepot = Tools::GetDepot();
-
     std::vector<Resource> resourceList;
-
     std::vector<BWAPI::TilePosition> baseLocations;
-
     Resource currentResource;
 
     int distance = INT_MAX;
@@ -81,7 +81,6 @@ std::vector<BWAPI::TilePosition> Tools::GetBaseLocationsList(std::vector<Resourc
                 distance = newDistance;
                 currentResource = resource;
             }
-
         }
 
         if (!isResourceInOurList(currentResource, resourceList))
@@ -89,13 +88,14 @@ std::vector<BWAPI::TilePosition> Tools::GetBaseLocationsList(std::vector<Resourc
             BWAPI::TilePosition tilePos = bm.getBuildingLocation(BWAPI::UnitTypes::Protoss_Nexus, BWAPI::TilePosition(currentResource.m_x, currentResource.m_y));
             if (tilePos.isValid())
             {
-                baseLocations.push_back(tilePos);
+                baseLocations.push_back(BWAPI::TilePosition(currentResource.m_x, currentResource.m_y));
+                //baseLocations.push_back(tilePos);
             }
             resourceList.push_back(currentResource);
         }
     }
     
-   if(baseLocations.size() >= 1)  baseLocations[0] = resourceDepot->getTilePosition();
+   //if(baseLocations.size() >= 1)  baseLocations[0] = resourceDepot->getTilePosition();
 
     return baseLocations;
     
@@ -156,7 +156,7 @@ Resource Tools::GetClosestGeyserToUnit(BWAPI::Position p)
         }
     }
 
-    return Resource(closestUnit->getID(),closestUnit->getTilePosition().x, closestUnit->getTilePosition().y, closestUnit->getInitialResources(),true);
+    return Resource(closestUnit->getID(),closestUnit->getTilePosition().x, closestUnit->getTilePosition().y, closestUnit->getInitialResources(), closestUnit->getDistance(p),true);
 }
 
 int Tools::CountUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units)
@@ -173,19 +173,34 @@ int Tools::CountUnitsOfType(BWAPI::UnitType type, const BWAPI::Unitset& units)
     return sum;
 }
 
+int Tools::CountUnitsOfType(BWAPI::UnitType type, bool isUnderConstruction)
+{
+    const BWAPI::Unitset& units = BWAPI::Broodwar->self()->getUnits();
+    int sum = 0;
+    for (auto& unit : units)
+    {
+        if (unit->getType() == type && (!unit->isCompleted() && isUnderConstruction))
+        {
+            sum++;
+        }
+    }
+
+    return sum;
+}
+
 int Tools::CountBaseUnitssWithFilter(int base, BWAPI::UnitFilter filter, BaseManager& bm)
 {
     BWAPI::Unit baseUnit = bm.getBasesMap()[base].m_base;
 
     if (!baseUnit || !baseUnit->exists()) return 0;
 
-    //BWAPI::Unitset units = BWAPI::Broodwar->getUnitsInRadius(baseUnit->getPosition(),1088,filter);
-
     size_t size = 0;
 
     for (size_t i = 0; i < bm.getBasesMap()[base].m_workers.size(); i++)
     {
-        if (BWAPI::Broodwar->getUnit(bm.getBasesMap()[base].m_workers[i])->getType() == BWAPI::UnitTypes::Protoss_Probe)
+        BWAPI::Unit worker = BWAPI::Broodwar->getUnit(bm.getBasesMap()[base].m_workers[i]);
+
+        if (worker->getType() == BWAPI::UnitTypes::Protoss_Probe && worker->isGatheringMinerals())
         {
             size++;
         }
@@ -226,15 +241,6 @@ BWAPI::Unit Tools::GetUnitOfType(BWAPI::UnitType type)
 
 BWAPI::Unit Tools::GetWorkerExcluding(int ID, int base, BaseManager& bm)
 {
-    //// For each unit that we own
-    //for (auto& unit : BWAPI::Broodwar->self()->getUnits())
-    //{
-    //    // if the unit is of the correct type, and it actually has been constructed, return it
-    //    if (unit->getType().isWorker() && unit->isCompleted() && unit->getID() != ID)
-    //    {
-    //        return unit;
-    //    }
-    //}
 
     for (size_t i = 0; i < bm.getBasesMap()[base].m_workers.size(); i++)
     {
@@ -359,6 +365,14 @@ bool Tools::BuildBuilding(BWAPI::UnitType type, BuildingStrategyManager& bsm, in
         if (!bsm.isAdditionalSupplyNeeded())
         {
             pos = bsm.getBuildingLocation(type, builder,base);
+
+            if (pos == BWAPI::TilePositions::None)
+            {
+                //bsm.isAdditionalSupplyNeeded() = true;
+                pos = BWAPI::Broodwar->getBuildLocation(BWAPI::UnitTypes::Protoss_Pylon,bsm.getLastBuiltLocation(base));
+                if(pos.isValid()) bsm.isPylonRequired() = true;
+            }
+
             hasBuilt = builder->build(type, pos);
         }
 
