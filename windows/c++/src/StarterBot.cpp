@@ -48,7 +48,7 @@ void StarterBot::onStart()
 
 
     //TODO: need to ask Dave about this flag
-    BWAPI::Broodwar->enableFlag(BWAPI::Flag::CompleteMapInformation);
+    //BWAPI::Broodwar->enableFlag(BWAPI::Flag::CompleteMapInformation);
 
     // Call MapTools OnStart
     //t1 = std::thread(&MapTools::onStart,std::ref(m_mapTools),std::ref(m_resourceManager));
@@ -528,8 +528,6 @@ int lastEnemyUnitID = -1;
 void StarterBot::buildArmy()
 {
 
-    std::cout<<BWAPI::Broodwar->enemy()->getUnits().size()<< std::endl;
-
     if (m_strategyManager.getBuildingStrategyManager().isAdditionalSupplyNeeded()) return;
     if (m_strategyManager.getBuildingStrategyManager().getWorkerID() != -1) return;
 
@@ -663,8 +661,6 @@ void StarterBot::onUnitMorph(BWAPI::Unit unit)
         m_strategyManager.getBaseManager().addUnitToBase(unit, builder);
     }
 
-
-    //BWAPI::Broodwar->sendText("%s", unit->getType().c_str());
 }
 
 // Called whenever a text is sent to the game by a user
