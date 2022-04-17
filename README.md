@@ -1,3 +1,7 @@
+# A fully functioning bot. It does expansion, attacks units, defends base. 
+
+
+
 # STARTcraft
 
 Get started with Starcraft AI Development as fast as possible. 
