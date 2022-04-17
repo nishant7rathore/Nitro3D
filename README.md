@@ -21,3 +21,5 @@ StartCraft comes with a StarterBot written in C++ using BWAPI 4.4.0. This repo c
 4. Open `windows/c++/visualstudio/StartCraft.sln` in Visual Studio 2019 to modify / recompile the code
 
 Note: Visual Studio 2019 MUST be updated to the most recent version to be able to link against the included BWAPI libraries
+
+This bot was created initially by Nishant Rathore and Ronak Parmar
